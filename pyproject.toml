@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "time-domain-ccst"
+version = "0.1.0"
+description = ""
+authors = ["José Ortiz-Ocampo <joseortiz1807@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+gmsh = "^4.12.2"
+meshio = "^5.3.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
