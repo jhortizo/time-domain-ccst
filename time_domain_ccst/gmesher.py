@@ -1,0 +1,62 @@
+"""
+Create meshes programmatically, using gmsh API for python
+"""
+
+import gmsh
+
+
+def _create_square_mesh(side: float, mesh_size: float, mesh_file: str) -> None:
+    coords = [(0, 0), (side, 0), (side, side), (0, side)]
+    _create_mesh_from_coords(coords, mesh_size, mesh_file)
+
+
+def _create_triangle_mesh(cathetus: float, mesh_size: float, mesh_file: str):
+    coords = [(0, 0), (cathetus, 0), (0, cathetus)]
+    _create_mesh_from_coords(coords, mesh_size, mesh_file)
+
+
+def _create_mesh_from_coords(
+    coords: list[tuple], mesh_size: float, mesh_file: str
+) -> None:
+    """Create a mesh for a given set of coordinates"""
+    gmsh.initialize()
+    gmsh.option.setNumber("General.Verbosity", 0)
+    gmsh.model.add("custom")
+
+    gmsh.option.setNumber("Mesh.Algorithm", 2)
+    gmsh.option.setNumber("Mesh.ElementOrder", 2)
+
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", mesh_size)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", mesh_size)
+
+    lc = mesh_size
+    ps = []
+    for coord in coords:
+        ps.append(gmsh.model.geo.addPoint(coord[0], coord[1], 0, lc))
+
+    lines = []
+    for i in range(len(ps)):
+        lines.append(gmsh.model.geo.addLine(ps[i], ps[(i + 1) % len(ps)]))
+
+    cl = gmsh.model.geo.addCurveLoop(lines)
+    gmsh.model.geo.addPlaneSurface([cl])
+
+    gmsh.model.geo.synchronize()
+    gmsh.model.mesh.generate(2)
+
+    gmsh.write(mesh_file)
+
+    # dev code, add breakpoint and check mesh
+    # gmsh.fltk.run()
+    gmsh.finalize()
+
+
+def create_mesh(geometry_type: str, params: dict, mesh_file: str) -> None:
+    mesh_functions = {
+        "square": _create_square_mesh,
+        "triangle": _create_triangle_mesh,
+    }
+    if geometry_type in mesh_functions:
+        mesh_functions[geometry_type](**params, mesh_file=mesh_file)
+    else:
+        raise ValueError(f"Unknown geometry type: {geometry_type}")
