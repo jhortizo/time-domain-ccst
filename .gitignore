@@ -1,0 +1,8 @@
+# Python native stuff to ignore (as clean as possible)
+__pycache__/
+
+# MAC OS stuff to ignore
+.DS_Store
+
+# Folders for dev and local files saving
+data/
