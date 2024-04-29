@@ -23,10 +23,10 @@ def _load_mesh(mesh_file):
 
     points = mesh.points
     cells = mesh.cells
-    tri6 = cells["triangle6"]
+    quad9 = cells["quad9"]
     line3 = cells["line3"]
     npts = points.shape[0]
-    nels = tri6.shape[0]
+    nels = quad9.shape[0]
 
     nodes = np.zeros((npts, 3))
     nodes[:, 1:] = points[:, 0:2]
@@ -37,9 +37,10 @@ def _load_mesh(mesh_file):
     cons[line_nodes, :] = -1
 
     # Elements
-    elements = np.zeros((nels, 9), dtype=int)
+    elements = np.zeros((nels, 3 + 9), dtype=int)
     elements[:, 1] = 2
-    elements[:, 3:] = tri6
+    elements[:, 3:] = quad9 # the first 3 cols correspond to material params and elements params
+    # the remaining are the nodes ids
 
     return cons, elements, nodes
 

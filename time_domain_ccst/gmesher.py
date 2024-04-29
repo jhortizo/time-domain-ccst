@@ -23,8 +23,11 @@ def _create_mesh_from_coords(
     gmsh.option.setNumber("General.Verbosity", 0)
     gmsh.model.add("custom")
 
-    gmsh.option.setNumber("Mesh.Algorithm", 2)
-    gmsh.option.setNumber("Mesh.ElementOrder", 2)
+    # Ensure we are using quadrilateral elements
+    gmsh.option.setNumber("Mesh.RecombineAll", 1)
+    gmsh.option.setNumber("Mesh.Algorithm", 8)  # Frontal-Delaunay for quads
+    gmsh.option.setNumber("Mesh.ElementOrder", 2)  # Quadratic elements
+    gmsh.option.setNumber("Mesh.SubdivisionAlgorithm", 1)  # 1: All quadrangles
 
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", mesh_size)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", mesh_size)
@@ -39,7 +42,9 @@ def _create_mesh_from_coords(
         lines.append(gmsh.model.geo.addLine(ps[i], ps[(i + 1) % len(ps)]))
 
     cl = gmsh.model.geo.addCurveLoop(lines)
-    gmsh.model.geo.addPlaneSurface([cl])
+    pl = gmsh.model.geo.addPlaneSurface([cl])
+
+    gmsh.model.geo.mesh.setRecombine(2, pl)
 
     gmsh.model.geo.synchronize()
     gmsh.model.mesh.generate(2)

@@ -23,8 +23,8 @@ def plot_eigenvec(bc_array, nodes, eigvec, elements):
 
 
 def main():
-    geometry_type = "triangle"
-    params = {"cathetus": 1.0, "mesh_size": 0.05}
+    geometry_type = "square"
+    params = {"side": 1.0, "mesh_size": 1.0}
     force_reprocess = False
     n_eigenvec = 2  # to plot
 
