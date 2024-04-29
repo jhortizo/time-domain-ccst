@@ -1,9 +1,10 @@
 import os
 
 MATERIAL_PARAMETERS = {
-    "E": 1.0,
-    "NU": 0.3,
-    "RHO": 1.0,
+    "E": 200e9,
+    "NU": 0.29,
+    "ETA": 1e4,
+    "RHO": 7900,
 }
 
 SIDE_TO_MESH_SIZE_RATIO = 10
