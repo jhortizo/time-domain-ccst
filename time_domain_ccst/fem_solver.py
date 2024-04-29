@@ -6,7 +6,8 @@ import meshio
 import numpy as np
 import solidspy.assemutil as ass
 from scipy.sparse.linalg import eigsh
-from solidspy_uels.solidspy_uels import elast_tri6
+from solidspy.assemutil import assembler
+from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
 from .constants import MATERIAL_PARAMETERS
 from .gmesher import create_mesh
@@ -33,13 +34,16 @@ def _load_mesh(mesh_file):
 
     # Constraints
     line_nodes = list(set(line3.flatten()))
-    cons = np.zeros((npts, 2), dtype=int)
+    cons = np.zeros((npts, 3), dtype=int)
     cons[line_nodes, :] = -1
 
     # Elements
     elements = np.zeros((nels, 3 + 9), dtype=int)
-    elements[:, 1] = 2
-    elements[:, 3:] = quad9 # the first 3 cols correspond to material params and elements params
+    elements[:, 0] = range(nels)
+    elements[:, 1] = 4
+    elements[
+        :, 3:
+    ] = quad9  # the first 3 cols correspond to material params and elements params
     # the remaining are the nodes ids
 
     return cons, elements, nodes
@@ -49,6 +53,7 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
     mats = [
         MATERIAL_PARAMETERS["E"],
         MATERIAL_PARAMETERS["NU"],
+        MATERIAL_PARAMETERS["ETA"],
         MATERIAL_PARAMETERS["RHO"],
     ]  # order imposed by elast_tri6
 
@@ -58,10 +63,8 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
 
     cons, elements, nodes = _load_mesh(files_dict["mesh"])
     # Assembly
-    assem_op, bc_array, neq = ass.DME(cons, elements, ndof_node=2, ndof_el_max=12)
-    stiff_mat, mass_mat = ass.assembler(
-        elements, mats, nodes, neq, assem_op, uel=elast_tri6
-    )
+    assem_op, bc_array, neq = assem_op_cst(cons, elements)
+    stiff_mat, mass_mat = assembler(elements, mats, nodes, neq, assem_op, uel=cst_quad9)
 
     # Solution
     eigvals, eigvecs = eigsh(
