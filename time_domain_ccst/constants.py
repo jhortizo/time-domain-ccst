@@ -7,8 +7,6 @@ MATERIAL_PARAMETERS = {
     "RHO": 7900,
 }
 
-SIDE_TO_MESH_SIZE_RATIO = 10
-
 MESHES_FOLDER = "data/meshes"
 SOLUTIONS_FOLDER = "data/solutions"
 IMAGES_FOLDER = "data/images"

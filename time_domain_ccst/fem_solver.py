@@ -4,8 +4,6 @@ Solve for wave propagation in classical mechanics in the given domain.
 
 import meshio
 import numpy as np
-import solidspy.assemutil as ass
-from scipy.sparse.linalg import eigsh
 from solidspy.assemutil import assembler
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
@@ -32,11 +30,6 @@ def _load_mesh(mesh_file):
     nodes = np.zeros((npts, 3))
     nodes[:, 1:] = points[:, 0:2]
 
-    # Constraints
-    line_nodes = list(set(line3.flatten()))
-    cons = np.zeros((npts, 3), dtype=int)
-    cons[line_nodes, :] = -1
-
     # Elements
     elements = np.zeros((nels, 3 + 9), dtype=int)
     elements[:, 0] = range(nels)
@@ -45,6 +38,11 @@ def _load_mesh(mesh_file):
         :, 3:
     ] = quad9  # the first 3 cols correspond to material params and elements params
     # the remaining are the nodes ids
+
+    # Constraints and Loads TODO: decouple this from solver
+    line_nodes = list(set(line3.flatten()))
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[line_nodes, :] = -1
 
     return cons, elements, nodes
 
@@ -55,7 +53,7 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
         MATERIAL_PARAMETERS["NU"],
         MATERIAL_PARAMETERS["ETA"],
         MATERIAL_PARAMETERS["RHO"],
-    ]  # order imposed by elast_tri6
+    ]  # order imposed by cst_quad9
 
     mats = np.array([mats])
 
@@ -67,25 +65,24 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
     stiff_mat, mass_mat = assembler(elements, mats, nodes, neq, assem_op, uel=cst_quad9)
 
     # Solution
-    eigvals, eigvecs = eigsh(
-        stiff_mat, M=mass_mat, k=stiff_mat.shape[0] - 1, which="SM"
-    )
+    solution = None
 
-    save_solution_files(bc_array, eigvals, eigvecs, files_dict)
+    save_solution_files(bc_array, solution, files_dict)
 
-    return bc_array, eigvals, eigvecs, nodes, elements
+    return bc_array, solution, nodes, elements
 
 
 def retrieve_solution(geometry_type: str, params: dict, force_reprocess: bool = False):
+    # TODO: refactor to use third party cache instead of file system
     files_dict = generate_solution_filenames(geometry_type, params)
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
-        bc_array, eigvals, eigvecs = load_solution_files(files_dict)
+        bc_array, solution = load_solution_files(files_dict)
         _, elements, nodes = _load_mesh(files_dict["mesh"])
 
     else:
-        bc_array, eigvals, eigvecs, nodes, elements = _compute_solution(
+        bc_array, solution, nodes, elements = _compute_solution(
             geometry_type, params, files_dict
         )
 
-    return bc_array, eigvals, eigvecs, nodes, elements
+    return bc_array, solution, nodes, elements
