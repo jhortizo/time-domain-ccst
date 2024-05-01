@@ -6,3 +6,4 @@ __pycache__/
 
 # Folders for dev and local files saving
 data/
+reference/
