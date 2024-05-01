@@ -4,7 +4,9 @@ Solve for wave propagation in classical mechanics in the given domain.
 
 import meshio
 import numpy as np
-from solidspy.assemutil import assembler
+from scipy.sparse.linalg import spsolve
+
+from solidspy.assemutil import assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
 from .constants import MATERIAL_PARAMETERS
@@ -44,10 +46,16 @@ def _load_mesh(mesh_file):
     cons = np.zeros((npts, 3), dtype=int)
     cons[line_nodes, :] = -1
 
-    return cons, elements, nodes
+    loads = np.zeros((npts, 3)) # empty loads
+
+
+    return cons, elements, nodes, loads
 
 
 def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
+
+    omega = 1 # TODO: would I need to modify this a lot?
+
     mats = [
         MATERIAL_PARAMETERS["E"],
         MATERIAL_PARAMETERS["NU"],
@@ -59,13 +67,14 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
 
     create_mesh(geometry_type, params, files_dict["mesh"])
 
-    cons, elements, nodes = _load_mesh(files_dict["mesh"])
+    cons, elements, nodes, loads = _load_mesh(files_dict["mesh"])
     # Assembly
     assem_op, bc_array, neq = assem_op_cst(cons, elements)
     stiff_mat, mass_mat = assembler(elements, mats, nodes, neq, assem_op, uel=cst_quad9)
 
+    rhs = loadasem(loads, bc_array, neq)
     # Solution
-    solution = None
+    solution = spsolve(stiff_mat - omega ** 2 * mass_mat, rhs)
 
     save_solution_files(bc_array, solution, files_dict)
 
@@ -78,7 +87,7 @@ def retrieve_solution(geometry_type: str, params: dict, force_reprocess: bool = 
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
         bc_array, solution = load_solution_files(files_dict)
-        _, elements, nodes = _load_mesh(files_dict["mesh"])
+        _, elements, nodes, _ = _load_mesh(files_dict["mesh"])
 
     else:
         bc_array, solution, nodes, elements = _compute_solution(
