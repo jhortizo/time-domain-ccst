@@ -25,7 +25,6 @@ def _load_mesh(mesh_file):
     points = mesh.points
     cells = mesh.cells
     quad9 = cells["quad9"]
-    line3 = cells["line3"]
     npts = points.shape[0]
     nels = quad9.shape[0]
 
@@ -42,11 +41,24 @@ def _load_mesh(mesh_file):
     # the remaining are the nodes ids
 
     # Constraints and Loads TODO: decouple this from solver
-    line_nodes = list(set(line3.flatten()))
+    line3 = cells["line3"]
+    cell_data = mesh.cell_data
     cons = np.zeros((npts, 3), dtype=int)
-    cons[line_nodes, :] = -1
+    # lower border is fixed in y and roll in x
+    # left border is fixed in x and roll in y
+    lower_border = set(line3[cell_data["line3"]["gmsh:physical"] == 1].flatten())
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
 
-    loads = np.zeros((npts, 3)) # empty loads
+    upper_border = set(line3[cell_data["line3"]["gmsh:physical"] == 3].flatten())
+
+    cons[list(lower_border), 1] = -1
+    cons[list(left_border), 2] = -1
+    loads = np.zeros((npts, 4)) # empty loads
+
+    loads[list(upper_border), 0] = list(upper_border) # specifcy nodes
+    loads[list(upper_border), 2] = 1 # force in y direction
+
+
 
 
     return cons, elements, nodes, loads

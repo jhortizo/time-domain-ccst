@@ -44,6 +44,10 @@ def _create_mesh_from_coords(
     cl = gmsh.model.geo.addCurveLoop(lines)
     pl = gmsh.model.geo.addPlaneSurface([cl])
 
+    for i, line in enumerate(lines):
+        gmsh.model.geo.addPhysicalGroup(1, [line], i + 1)
+        gmsh.model.setPhysicalName(1, i + 1, f"Edge {i + 1}")
+
     gmsh.model.geo.mesh.setRecombine(2, pl)
 
     gmsh.model.geo.synchronize()
