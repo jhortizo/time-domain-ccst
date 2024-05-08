@@ -36,10 +36,14 @@ def assem_op_cst_quad9_rot4(cons, elements):
     return assem_op, bc_array, neq + nels
 
 
-def cst_mat_2d_u_t(r, s, coord, element_u):
+def cst_mat_2d_u_w(r, s, coord, element_u, element_w):
     """
     Interpolation matrices for a quadratic element for plane
     c-cst elasticity
+
+    Considers the use of an element for
+    the displacement field and different one
+    for the rotation field.
 
     Parameters
     ----------
@@ -49,6 +53,10 @@ def cst_mat_2d_u_t(r, s, coord, element_u):
         Vertical coordinate of the evaluation point.
     coord : ndarray (float)
         Coordinates of the element.
+    element_u : callable
+        Element for the displacement field.
+    element_w : callable
+        Element for the rotation field.
 
     Returns
     -------
@@ -69,23 +77,33 @@ def cst_mat_2d_u_t(r, s, coord, element_u):
         for Solids and Structures, 2011, 48, 2496-2510.
     """
     N_u, dN_udr = element_u(r, s)
+    N_w, dN_wdr = element_w(r, s)
+
     det_u, jaco_inv_u = jacoper(dN_udr, coord)
+    det_w, jaco_inv_w = jacoper(dN_wdr, coord)
+
     dN_udr = jaco_inv_u @ dN_udr
+    dN_wdr = jaco_inv_w @ dN_wdr
+
     H = np.zeros((2, 2 * N_u.shape[0]))
     B = np.zeros((3, 2 * N_u.shape[0]))
-    Bk = np.zeros((2, N_u.shape[0]))
+    Bk = np.zeros((2, N_w.shape[0]))
     B_curl = np.zeros((2 * N_u.shape[0],))
+
     H[0, 0::2] = N_u
     H[1, 1::2] = N_u
+
     B[0, 0::2] = dN_udr[0, :]
     B[1, 1::2] = dN_udr[1, :]
     B[2, 0::2] = dN_udr[1, :]
     B[2, 1::2] = dN_udr[0, :]
-    Bk[0, :] = -dN_udr[1, :]
-    Bk[1, :] = dN_udr[0, :]
+
+    Bk[0, :] = -dN_wdr[1, :]
+    Bk[1, :] = dN_wdr[0, :]
+
     B_curl[0::2] = -dN_udr[1, :]
     B_curl[1::2] = dN_udr[0, :]
-    return N_u, H, B, Bk, B_curl, det_u
+    return N_u, N_w, H, B, Bk, B_curl, det_u, det_w
 
 
 def cst_quad9_rot4(coord, params):
@@ -93,6 +111,9 @@ def cst_quad9_rot4(coord, params):
     Quadrilateral element with 9 nodes for Corrected Couple-Stress
     elasticity (C-CST) under plane-strain as presented in [CST]_
 
+    Displacement fields (x,y) are sampled in the nine nodes of the
+    element, the rotation field is sampled in the element vertices only,
+    skew symmetric part of force-stress tensor is sampled in the center node only.
 
     Parameters
     ----------
@@ -117,8 +138,8 @@ def cst_quad9_rot4(coord, params):
         for Solids and Structures, 2011, 48, 2496-2510.
     """
     E, nu, eta, rho = params
-    stiff_mat = np.zeros((28, 28))
-    mass_mat = np.zeros((28, 28))
+    stiff_mat = np.zeros((23, 23))  # 18 for u, 4 for w, 1 for s
+    mass_mat = np.zeros((23, 23))
     c = (
         E
         * (1 - nu)
@@ -137,48 +158,19 @@ def cst_quad9_rot4(coord, params):
     for cont in range(0, npts**2):
         r = gpts[cont, 0]
         s = gpts[cont, 1]
-        N, H, B, Bk, B_curl, det = cst_mat_2d_u_t(r, s, coord, shape_quad9)
+        _, N_w, H, B, Bk, B_curl, det_u, det_w = cst_mat_2d_u_w(
+            r, s, coord, shape_quad9, shape_quad4
+        )
         Ku = B.T @ c @ B
         Kw = Bk.T @ b @ Bk
-        K_w_s = -2 * N
-        factor = det * gwts[cont]
-        stiff_mat[0:18, 0:18] += factor * Ku
-        stiff_mat[18:27, 18:27] += factor * Kw
-        stiff_mat[0:18, 27] += factor * B_curl.T
-        stiff_mat[18:27, 27] += factor * K_w_s.T
-        stiff_mat[27, 0:18] += factor * B_curl
-        stiff_mat[27, 18:27] += factor * K_w_s
-        mass_mat[0:18, 0:18] += rho * factor * (H.T @ H)
-    order = [
-        0,
-        1,
-        18,
-        2,
-        3,
-        19,
-        4,
-        5,
-        20,
-        6,
-        7,
-        21,
-        8,
-        9,
-        22,
-        10,
-        11,
-        23,
-        12,
-        13,
-        24,
-        14,
-        15,
-        25,
-        16,
-        17,
-        26,
-        27,
-    ]
-    stiff_mat = stiff_mat[:, order]
-    mass_mat = mass_mat[:, order]
-    return stiff_mat[order, :], mass_mat[order, :]
+        K_w_s = -2 * N_w
+        factor_u = det_u * gwts[cont]
+        factor_w = det_w * gwts[cont]
+        stiff_mat[0:18, 0:18] += factor_u * Ku
+        stiff_mat[18:23, 18:23] += factor_w * Kw
+        stiff_mat[0:18, 23] += factor_u * B_curl.T
+        stiff_mat[18:23, 23] += factor_w * K_w_s.T
+        stiff_mat[23, 0:18] += factor_u * B_curl
+        stiff_mat[23, 18:23] += factor_w * K_w_s
+        mass_mat[0:18, 0:18] += rho * factor_u * (H.T @ H)
+    return stiff_mat, mass_mat
