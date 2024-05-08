@@ -5,11 +5,10 @@ Solve for wave propagation in classical mechanics in the given domain.
 import meshio
 import numpy as np
 from scipy.sparse.linalg import spsolve
-
 from solidspy.assemutil import assembler, loadasem
-from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
 from .constants import MATERIAL_PARAMETERS
+from .cst_utils import assem_op_cst_quad9_rot4, cst_quad9_rot4
 from .gmesher import create_mesh
 from .utils import (
     check_solution_files_exists,
@@ -81,8 +80,8 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
 
     cons, elements, nodes, loads = _load_mesh(files_dict["mesh"])
     # Assembly
-    assem_op, bc_array, neq = assem_op_cst(cons, elements)
-    stiff_mat, mass_mat = assembler(elements, mats, nodes, neq, assem_op, uel=cst_quad9)
+    assem_op, bc_array, neq = assem_op_cst_quad9_rot4(cons, elements)
+    stiff_mat, mass_mat = assembler(elements, mats, nodes, neq, assem_op, uel=cst_quad9_rot4)
 
     rhs = loadasem(loads, bc_array, neq)
     # Solution
