@@ -55,7 +55,7 @@ def _load_mesh(mesh_file):
     cons[list(left_border), 2] = -1
     loads = np.zeros((npts, 4)) # empty loads
 
-    loads[list(upper_border), 0] = list(upper_border) # specifcy nodes
+    loads[list(upper_border), 0] = list(upper_border) # specify nodes
     loads[list(upper_border), 2] = 1 # force in y direction
 
 

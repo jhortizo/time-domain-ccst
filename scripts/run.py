@@ -22,7 +22,7 @@ def plot_field(bc_array, nodes, us, elements):
 def main():
     geometry_type = "square"
     params = {"side": 1.0, "mesh_size": 1.0}
-    force_reprocess = False
+    force_reprocess = True
 
     bc_array, solution, nodes, elements = retrieve_solution(
         geometry_type, params, force_reprocess=force_reprocess
@@ -30,6 +30,7 @@ def main():
 
     nels = elements.shape[0]
     us = solution[:-nels]
+    # ss = solution[-nels:]
 
     plot_field(bc_array, nodes, us, elements)
 
