@@ -2,6 +2,8 @@ import numpy as np
 from solidspy import gaussutil as gau
 from solidspy.femutil import jacoper, shape_quad9, shape_quad4
 
+from .constants import QUAD9_ROT4_ELEMENT_DOFS_IDS
+
 
 def custom_eqcounter(cons, vertex_nodes_ids, ndof_node=2):
     """Count active equations
@@ -28,6 +30,7 @@ def custom_eqcounter(cons, vertex_nodes_ids, ndof_node=2):
     nnodes = cons.shape[0]
     bc_array = cons.copy().astype(int)
     # mark all rotations from nodes not in vertex_nodes_ids as constrained
+    # this corrects the calculation of neq
     edge_nodes_ids = np.setdiff1d(range(nnodes), vertex_nodes_ids)
     bc_array[edge_nodes_ids, 2] = -1
 
@@ -69,8 +72,8 @@ def assem_op_cst_quad9_rot4(cons, elements):
     assem_op = np.zeros([nels, 23], dtype=np.integer)
     neq, bc_array = custom_eqcounter(cons, vertex_nodes_ids, ndof_node=3)
     for ele in range(nels):
-        assem_op[ele, :22] = bc_array[elements[ele, 3:]].flatten()
-        assem_op[ele, 27] = neq + ele
+        assem_op[ele, :22] = bc_array[elements[ele, 3:]].flatten()[QUAD9_ROT4_ELEMENT_DOFS_IDS]
+        assem_op[ele, 22] = neq + ele
     return assem_op, bc_array, neq + nels
 
 
@@ -118,7 +121,7 @@ def cst_mat_2d_u_w(r, s, coord, element_u, element_w):
     N_w, dN_wdr = element_w(r, s)
 
     det_u, jaco_inv_u = jacoper(dN_udr, coord)
-    det_w, jaco_inv_w = jacoper(dN_wdr, coord)
+    det_w, jaco_inv_w = jacoper(dN_wdr, coord[:4])
 
     dN_udr = jaco_inv_u @ dN_udr
     dN_wdr = jaco_inv_w @ dN_wdr
@@ -205,10 +208,10 @@ def cst_quad9_rot4(coord, params):
         factor_u = det_u * gwts[cont]
         factor_w = det_w * gwts[cont]
         stiff_mat[0:18, 0:18] += factor_u * Ku
-        stiff_mat[18:23, 18:23] += factor_w * Kw
-        stiff_mat[0:18, 23] += factor_u * B_curl.T
-        stiff_mat[18:23, 23] += factor_w * K_w_s.T
-        stiff_mat[23, 0:18] += factor_u * B_curl
-        stiff_mat[23, 18:23] += factor_w * K_w_s
+        stiff_mat[18:22, 18:22] += factor_w * Kw
+        stiff_mat[0:18, 22] += factor_u * B_curl.T
+        stiff_mat[18:22, 22] += factor_w * K_w_s.T
+        stiff_mat[22, 0:18] += factor_u * B_curl
+        stiff_mat[22, 18:22] += factor_w * K_w_s
         mass_mat[0:18, 0:18] += rho * factor_u * (H.T @ H)
     return stiff_mat, mass_mat
