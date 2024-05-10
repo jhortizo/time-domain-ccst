@@ -51,14 +51,11 @@ def _load_mesh(mesh_file):
     upper_border = set(line3[cell_data["line3"]["gmsh:physical"] == 3].flatten())
 
     cons[list(lower_border), 1] = -1
-    cons[list(left_border), 2] = -1
+    cons[list(left_border), 0] = -1
     loads = np.zeros((npts, 4)) # empty loads
+    loads[:, 0] = np.arange(npts) # specify nodes
 
-    loads[list(upper_border), 0] = list(upper_border) # specify nodes
-    loads[list(upper_border), 2] = 1 # force in y direction
-
-
-
+    loads[list(upper_border), 1 + 1] = 100 # force in y direction
 
     return cons, elements, nodes, loads
 
