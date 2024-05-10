@@ -31,8 +31,8 @@ def custom_eqcounter(cons, vertex_nodes_ids, ndof_node=2):
     bc_array = cons.copy().astype(int)
     # mark all rotations from nodes not in vertex_nodes_ids as constrained
     # this corrects the calculation of neq
-    edge_nodes_ids = np.setdiff1d(range(nnodes), vertex_nodes_ids)
-    bc_array[edge_nodes_ids, 2] = -1
+    not_vertex_nodes_ids = np.setdiff1d(range(nnodes), vertex_nodes_ids)
+    bc_array[not_vertex_nodes_ids, 2] = -1
 
     neq = 0
     for i in range(nnodes):

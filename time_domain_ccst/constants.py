@@ -34,7 +34,7 @@ QUAD9_ROT4_ELEMENT_DOFS_IDS = [
     22,
     24,
     25,
-]  # toss the 14th, 17th, 20th, 23rd, 26th dofs, as are the rotation ones for the edge nodes
+]  # toss the 14th, 17th, 20th, 23rd, 26th dofs, as are the rotation ones for the non-vertex nodes
 
 # Create the folders if they don't exist
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
