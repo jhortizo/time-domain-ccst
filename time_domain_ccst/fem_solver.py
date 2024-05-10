@@ -6,6 +6,7 @@ import meshio
 import numpy as np
 from scipy.sparse.linalg import spsolve
 from solidspy.assemutil import assembler, loadasem
+from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
 from .constants import MATERIAL_PARAMETERS
 from .cst_utils import assem_op_cst_quad9_rot4, cst_quad9_rot4
@@ -17,6 +18,10 @@ from .utils import (
     save_solution_files,
 )
 
+cst_model_functions = {
+    "cst_quad9_rot4": (assem_op_cst_quad9_rot4, cst_quad9_rot4),
+    "cst_quad9": (assem_op_cst, cst_quad9),
+}
 
 def _load_mesh(mesh_file):
     mesh = meshio.read(mesh_file)
@@ -60,8 +65,9 @@ def _load_mesh(mesh_file):
     return cons, elements, nodes, loads
 
 
-def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
+def _compute_solution(geometry_type: str, params: dict, files_dict: dict, cst_model='cst_quad9_rot4'):
 
+    assem_op, cst_element = cst_model_functions[cst_model]
     omega = 1 # TODO: would I need to modify this a lot?
 
     mats = [
@@ -77,8 +83,8 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
 
     cons, elements, nodes, loads = _load_mesh(files_dict["mesh"])
     # Assembly
-    assem_op, bc_array, neq = assem_op_cst_quad9_rot4(cons, elements)
-    stiff_mat, mass_mat = assembler(elements, mats, nodes, neq, assem_op, uel=cst_quad9_rot4)
+    assem_op, bc_array, neq = assem_op(cons, elements)
+    stiff_mat, mass_mat = assembler(elements, mats, nodes, neq, assem_op, uel=cst_element)
 
     rhs = loadasem(loads, bc_array, neq)
     # Solution
@@ -89,7 +95,7 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict):
     return bc_array, solution, nodes, elements
 
 
-def retrieve_solution(geometry_type: str, params: dict, force_reprocess: bool = False):
+def retrieve_solution(geometry_type: str, params: dict, cst_model:str, force_reprocess: bool = False):
     # TODO: refactor to use third party cache instead of file system
     files_dict = generate_solution_filenames(geometry_type, params)
 
@@ -99,7 +105,7 @@ def retrieve_solution(geometry_type: str, params: dict, force_reprocess: bool = 
 
     else:
         bc_array, solution, nodes, elements = _compute_solution(
-            geometry_type, params, files_dict
+            geometry_type, params, files_dict, cst_model
         )
 
     return bc_array, solution, nodes, elements
