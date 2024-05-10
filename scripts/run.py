@@ -26,6 +26,7 @@ def plot_fields_quad9_rot4(bc_array, nodes, elements, solution):
     sol_displacement = pos.complete_disp(bc_array[:, :2], nodes, solution, ndof_node=2)
     pos.plot_node_field(sol_displacement[:, 0], nodes, elements, title='X')  # x component
     pos.plot_node_field(sol_displacement[:, 1], nodes, elements, title='Y')  # y component
+    plt.show()
 
     # x = nodes[:, 1] # in case the other code yields weird stuff
     # y = nodes[:, 2]
@@ -60,9 +61,10 @@ def main():
     geometry_type = "square"
     params = {"side": 1.0, "mesh_size": 1.0}
     force_reprocess = True
+    cst_model = 'cst_quad9_rot4'
 
     bc_array, solution, nodes, elements = retrieve_solution(
-        geometry_type, params, force_reprocess=force_reprocess
+        geometry_type, params, cst_model, force_reprocess=force_reprocess
     )
 
     plot_fields_quad9_rot4(bc_array, nodes, elements, solution)
