@@ -1,4 +1,3 @@
-import numpy as np
 import warnings
 
 from time_domain_ccst.fem_solver import retrieve_solution
@@ -9,10 +8,10 @@ warnings.filterwarnings(
 
 
 def plot_fields(bc_array, nodes, elements, solution):
-    import solidspy.postprocesor as pos
     import matplotlib.pyplot as plt
+    import solidspy.postprocesor as pos
 
-    sol_displacement = pos.complete_disp(bc_array[:, :2], nodes, solution, ndof_node=3)
+    sol_displacement = pos.complete_disp(bc_array, nodes, solution, ndof_node=3)
     pos.plot_node_field(
         sol_displacement[:, 0], nodes, elements, title="X"
     )  # x component
@@ -20,7 +19,7 @@ def plot_fields(bc_array, nodes, elements, solution):
         sol_displacement[:, 1], nodes, elements, title="Y"
     )  # y component
     pos.plot_node_field(
-        sol_displacement[:, 3], nodes, elements, title=r"$\theta$"
+        sol_displacement[:, 2], nodes, elements, title="w"
     )  # y component
     plt.show()
 
