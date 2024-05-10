@@ -11,10 +11,11 @@ def plot_field(bc_array, nodes, us, elements):
     import solidspy.postprocesor as pos
     import matplotlib.pyplot as plt
 
-    sol = pos.complete_disp(bc_array, nodes, us, ndof_node=3)
+    sol = pos.complete_disp(bc_array, nodes, us, ndof_node=2)
     pos.plot_node_field(sol[:, 0], nodes, elements)  # x component
     pos.plot_node_field(sol[:, 1], nodes, elements)  # y component
-    pos.plot_node_field(sol[:, 2], nodes, elements)  # rotations
+
+    # TODO: rotations field is missing
 
     plt.show()
 
@@ -28,9 +29,11 @@ def main():
         geometry_type, params, force_reprocess=force_reprocess
     )
 
+    nnodes = nodes.shape[0]
     nels = elements.shape[0]
-    us = solution[:-nels]
-    # ss = solution[-nels:]
+    us = solution[:2*nnodes]
+    ws = solution[2*nnodes:2*nnodes+nels]
+    ss = solution[-nels:] 
 
     plot_field(bc_array, nodes, us, elements)
 

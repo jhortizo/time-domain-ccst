@@ -1,7 +1,44 @@
 import numpy as np
 from solidspy import gaussutil as gau
-from solidspy.assemutil import eqcounter
 from solidspy.femutil import jacoper, shape_quad9, shape_quad4
+
+
+def custom_eqcounter(cons, vertex_nodes_ids, ndof_node=2):
+    """Count active equations
+
+    Creates boundary conditions array bc_array
+
+    This custom version is used specifically for the CST element
+    where the rotation dof is only present in the vertex nodes.
+
+    Parameters
+    ----------
+    cons : ndarray.
+      Array with constraints for each node.
+
+    Returns
+    -------
+    neq : int
+      Number of equations in the system after removing the nodes
+      with imposed displacements.
+    bc_array : ndarray (int)
+      Array that maps the nodes with number of equations.
+
+    """
+    nnodes = cons.shape[0]
+    bc_array = cons.copy().astype(int)
+    # mark all rotations from nodes not in vertex_nodes_ids as constrained
+    edge_nodes_ids = np.setdiff1d(range(nnodes), vertex_nodes_ids)
+    bc_array[edge_nodes_ids, 2] = -1
+
+    neq = 0
+    for i in range(nnodes):
+        for j in range(ndof_node):
+            if bc_array[i, j] == 0:
+                bc_array[i, j] = neq
+                neq += 1
+
+    return neq, bc_array
 
 
 def assem_op_cst_quad9_rot4(cons, elements):
@@ -28,10 +65,11 @@ def assem_op_cst_quad9_rot4(cons, elements):
 
     """
     nels = elements.shape[0]
-    assem_op = np.zeros([nels, 28], dtype=np.integer)
-    neq, bc_array = eqcounter(cons, ndof_node=3)
+    vertex_nodes_ids = list(set(elements[:, 3:7].flatten()))
+    assem_op = np.zeros([nels, 23], dtype=np.integer)
+    neq, bc_array = custom_eqcounter(cons, vertex_nodes_ids, ndof_node=3)
     for ele in range(nels):
-        assem_op[ele, :27] = bc_array[elements[ele, 3:]].flatten()
+        assem_op[ele, :22] = bc_array[elements[ele, 3:]].flatten()
         assem_op[ele, 27] = neq + ele
     return assem_op, bc_array, neq + nels
 
