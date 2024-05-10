@@ -26,7 +26,6 @@ def plot_fields_quad9_rot4(bc_array, nodes, elements, solution):
     sol_displacement = pos.complete_disp(bc_array[:, :2], nodes, solution, ndof_node=2)
     pos.plot_node_field(sol_displacement[:, 0], nodes, elements, title='X')  # x component
     pos.plot_node_field(sol_displacement[:, 1], nodes, elements, title='Y')  # y component
-    plt.show()
 
     # x = nodes[:, 1] # in case the other code yields weird stuff
     # y = nodes[:, 2]
@@ -51,9 +50,11 @@ def plot_fields_quad9_rot4(bc_array, nodes, elements, solution):
     y = nodes[vertex_nodes][:, 2]
     z = sol_rotation.flatten()
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(x, y, z, cmap='viridis')
+    fig, ax = plt.subplots()
+    # Create a contour plot
+    contour = ax.tricontourf(x, y, z, levels=50, cmap='viridis')
+    fig.colorbar(contour, ax=ax) 
+    plt.title('Rotation')
     plt.show()
 
 
