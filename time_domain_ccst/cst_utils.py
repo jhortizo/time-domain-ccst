@@ -1,6 +1,6 @@
 import numpy as np
 from solidspy import gaussutil as gau
-from solidspy.femutil import jacoper, shape_quad9, shape_quad4
+from solidspy.femutil import jacoper, shape_quad4, shape_quad9
 
 from .constants import QUAD9_ROT4_ELEMENT_DOFS_IDS
 

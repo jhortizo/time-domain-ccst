@@ -23,7 +23,8 @@ cst_model_functions = {
     "cst_quad9": (assem_op_cst, cst_quad9),
 }
 
-def _load_mesh(mesh_file):
+
+def _load_mesh(mesh_file: str) -> tuple[np.array, np.array, np.array, np.array]:
     mesh = meshio.read(mesh_file)
 
     points = mesh.points
@@ -39,9 +40,9 @@ def _load_mesh(mesh_file):
     elements = np.zeros((nels, 3 + 9), dtype=int)
     elements[:, 0] = range(nels)
     elements[:, 1] = 4
-    elements[
-        :, 3:
-    ] = quad9  # the first 3 cols correspond to material params and elements params
+    elements[:, 3:] = (
+        quad9  # the first 3 cols correspond to material params and elements params
+    )
     # the remaining are the nodes ids
 
     # Constraints and Loads TODO: decouple this from solver
@@ -57,18 +58,19 @@ def _load_mesh(mesh_file):
 
     cons[list(lower_border), 1] = -1
     cons[list(left_border), 0] = -1
-    loads = np.zeros((npts, 4)) # empty loads
-    loads[:, 0] = np.arange(npts) # specify nodes
+    loads = np.zeros((npts, 4))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
 
-    loads[list(upper_border), 1 + 1] = 100 # force in y direction
+    loads[list(upper_border), 1 + 1] = 100  # force in y direction
 
     return cons, elements, nodes, loads
 
 
-def _compute_solution(geometry_type: str, params: dict, files_dict: dict, cst_model='cst_quad9_rot4'):
-
+def _compute_solution(
+    geometry_type: str, params: dict, files_dict: dict, cst_model="cst_quad9_rot4"
+):
     assem_op, cst_element = cst_model_functions[cst_model]
-    omega = 1 # TODO: would I need to modify this a lot?
+    omega = 1
 
     mats = [
         MATERIAL_PARAMETERS["E"],
@@ -84,18 +86,22 @@ def _compute_solution(geometry_type: str, params: dict, files_dict: dict, cst_mo
     cons, elements, nodes, loads = _load_mesh(files_dict["mesh"])
     # Assembly
     assem_op, bc_array, neq = assem_op(cons, elements)
-    stiff_mat, mass_mat = assembler(elements, mats, nodes, neq, assem_op, uel=cst_element)
+    stiff_mat, mass_mat = assembler(
+        elements, mats, nodes, neq, assem_op, uel=cst_element
+    )
 
     rhs = loadasem(loads, bc_array, neq)
     # Solution
-    solution = spsolve(stiff_mat - omega ** 2 * mass_mat, rhs)
+    solution = spsolve(stiff_mat - omega**2 * mass_mat, rhs)
 
     save_solution_files(bc_array, solution, files_dict)
 
     return bc_array, solution, nodes, elements
 
 
-def retrieve_solution(geometry_type: str, params: dict, cst_model:str, force_reprocess: bool = False):
+def retrieve_solution(
+    geometry_type: str, params: dict, cst_model: str, force_reprocess: bool = False
+):
     # TODO: refactor to use third party cache instead of file system
     files_dict = generate_solution_filenames(geometry_type, params)
 

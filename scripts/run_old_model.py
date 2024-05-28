@@ -26,7 +26,7 @@ def plot_fields(bc_array, nodes, elements, solution):
 
 def main():
     geometry_type = "square"
-    params = {"side": 1.0, "mesh_size": 1.0}
+    params = {"side": 1.0, "mesh_size": 0.1}
     force_reprocess = True
     cst_model = "cst_quad9"
 
