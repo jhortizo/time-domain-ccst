@@ -72,7 +72,9 @@ def assem_op_cst_quad9_rot4(cons, elements):
     assem_op = np.zeros([nels, 23], dtype=np.integer)
     neq, bc_array = custom_eqcounter(cons, vertex_nodes_ids, ndof_node=3)
     for ele in range(nels):
-        assem_op[ele, :22] = bc_array[elements[ele, 3:]].flatten()[QUAD9_ROT4_ELEMENT_DOFS_IDS]
+        assem_op[ele, :22] = bc_array[elements[ele, 3:]].flatten()[
+            QUAD9_ROT4_ELEMENT_DOFS_IDS
+        ]
         assem_op[ele, 22] = neq + ele
     return assem_op, bc_array, neq + nels
 
@@ -214,4 +216,32 @@ def cst_quad9_rot4(coord, params):
         stiff_mat[22, 0:18] += factor_u * B_curl
         stiff_mat[22, 18:22] += factor_w * K_w_s
         mass_mat[0:18, 0:18] += rho * factor_u * (H.T @ H)
-    return stiff_mat, mass_mat
+
+    order = [
+        0,
+        1,
+        18,
+        2,
+        3,
+        19,
+        4,
+        5,
+        20,
+        6,
+        7,
+        21,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        22,
+    ]
+    stiff_mat = stiff_mat[:, order]
+    mass_mat = mass_mat[:, order]
+    return stiff_mat[order, :], mass_mat[order, :]
