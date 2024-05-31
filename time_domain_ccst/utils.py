@@ -5,22 +5,22 @@ import numpy as np
 from .constants import MESHES_FOLDER, SOLUTIONS_FOLDER
 
 
-def _parse_solution_identifier(geometry_type, params):
+def _parse_solution_identifier(geometry_type, cst_model, constraints_loads, params):
     "Returnss strign associated with run parameters"
 
     params_str = [
-        str(this_key) + "_" + str(this_value).replace(".", "")
+        str(this_key) + "_" + str(this_value)
         for this_key, this_value in params.items()
-    ]  # TODO: if value is 1.0, it is left as 10, which may be confusing later...
+    ] 
 
-    filename = geometry_type + "-" + "-".join(params_str)
+    filename = geometry_type + cst_model + constraints_loads + "-" + "-".join(params_str)
 
     return filename
 
 
-def generate_solution_filenames(geometry_type, params):
+def generate_solution_filenames(geometry_type, cst_model, constraints_loads, params):
     "Returns filenames for solution files"
-    solution_id = _parse_solution_identifier(geometry_type, params)
+    solution_id = _parse_solution_identifier(geometry_type, cst_model, constraints_loads, params)
     bc_array_file = f"{SOLUTIONS_FOLDER}/{solution_id}-bc_array.csv"
     solution_file = f"{SOLUTIONS_FOLDER}/{solution_id}-solution.csv"
     mesh_file = f"{MESHES_FOLDER}/{solution_id}.msh"

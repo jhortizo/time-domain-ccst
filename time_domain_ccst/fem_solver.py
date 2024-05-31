@@ -4,6 +4,7 @@ Solve for wave propagation in classical mechanics in the given domain.
 
 import meshio
 import numpy as np
+from constraints_loads_creators import SYSTEMS
 from scipy.sparse.linalg import spsolve
 from solidspy.assemutil import assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
@@ -24,7 +25,9 @@ cst_model_functions = {
 }
 
 
-def _load_mesh(mesh_file: str) -> tuple[np.array, np.array, np.array, np.array]:
+def _load_mesh(
+    mesh_file: str, cons_loads_fcn: callable
+) -> tuple[np.array, np.array, np.array, np.array]:
     mesh = meshio.read(mesh_file)
 
     points = mesh.points
@@ -44,30 +47,24 @@ def _load_mesh(mesh_file: str) -> tuple[np.array, np.array, np.array, np.array]:
         quad9  # the first 3 cols correspond to material params and elements params
     )
     # the remaining are the nodes ids
-
-    # Constraints and Loads TODO: decouple this from solver
     line3 = cells["line3"]
     cell_data = mesh.cell_data
-    cons = np.zeros((npts, 3), dtype=int)
-    # lower border is fixed in y and roll in x
-    # left border is fixed in x and roll in y
-    lower_border = set(line3[cell_data["line3"]["gmsh:physical"] == 1].flatten())
-    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
 
-    upper_border = set(line3[cell_data["line3"]["gmsh:physical"] == 3].flatten())
-
-    cons[list(lower_border), 1] = -1
-    cons[list(left_border), 0] = -1
-    loads = np.zeros((npts, 4))  # empty loads
-    loads[:, 0] = np.arange(npts)  # specify nodes
-
-    loads[list(upper_border), 1 + 1] = 100  # force in y direction
+    if cons_loads_fcn is None:
+        cons = np.zeros((npts, 3), dtype=int)
+        loads = np.zeros((npts, 4))
+    else:
+        cons, loads = cons_loads_fcn(line3, cell_data, npts)
 
     return cons, elements, nodes, loads
 
 
 def _compute_solution(
-    geometry_type: str, params: dict, files_dict: dict, cst_model="cst_quad9_rot4"
+    geometry_type: str,
+    params: dict,
+    files_dict: dict,
+    cst_model: str,
+    cons_loads_fcn: callable,
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
     omega = 1
@@ -83,7 +80,7 @@ def _compute_solution(
 
     create_mesh(geometry_type, params, files_dict["mesh"])
 
-    cons, elements, nodes, loads = _load_mesh(files_dict["mesh"])
+    cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
     # Assembly
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
@@ -100,18 +97,24 @@ def _compute_solution(
 
 
 def retrieve_solution(
-    geometry_type: str, params: dict, cst_model: str, force_reprocess: bool = False
+    geometry_type: str,
+    params: dict,
+    cst_model: str,
+    constraints_loads: str,
+    force_reprocess: bool = False,
 ):
-    # TODO: refactor to use third party cache instead of file system
-    files_dict = generate_solution_filenames(geometry_type, params)
+    files_dict = generate_solution_filenames(
+        geometry_type, cst_model, constraints_loads, params
+    )
+    cons_loads_fcn = SYSTEMS.get(constraints_loads)
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
         bc_array, solution = load_solution_files(files_dict)
-        _, elements, nodes, _ = _load_mesh(files_dict["mesh"])
+        _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn)
 
     else:
         bc_array, solution, nodes, elements = _compute_solution(
-            geometry_type, params, files_dict, cst_model
+            geometry_type, params, files_dict, cst_model, cons_loads_fcn
         )
 
     return bc_array, solution, nodes, elements
