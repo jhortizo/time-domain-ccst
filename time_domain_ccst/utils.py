@@ -9,18 +9,27 @@ def _parse_solution_identifier(geometry_type, cst_model, constraints_loads, para
     "Returnss strign associated with run parameters"
 
     params_str = [
-        str(this_key) + "_" + str(this_value)
-        for this_key, this_value in params.items()
-    ] 
+        str(this_key) + "_" + str(this_value) for this_key, this_value in params.items()
+    ]
 
-    filename = geometry_type + cst_model + constraints_loads + "-" + "-".join(params_str)
+    filename = (
+        geometry_type
+        + "-"
+        + cst_model
+        + "-"
+        + constraints_loads
+        + "-"
+        + "-".join(params_str)
+    )
 
     return filename
 
 
 def generate_solution_filenames(geometry_type, cst_model, constraints_loads, params):
     "Returns filenames for solution files"
-    solution_id = _parse_solution_identifier(geometry_type, cst_model, constraints_loads, params)
+    solution_id = _parse_solution_identifier(
+        geometry_type, cst_model, constraints_loads, params
+    )
     bc_array_file = f"{SOLUTIONS_FOLDER}/{solution_id}-bc_array.csv"
     solution_file = f"{SOLUTIONS_FOLDER}/{solution_id}-solution.csv"
     mesh_file = f"{MESHES_FOLDER}/{solution_id}.msh"
