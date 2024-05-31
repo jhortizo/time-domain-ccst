@@ -4,12 +4,12 @@ Solve for wave propagation in classical mechanics in the given domain.
 
 import meshio
 import numpy as np
-from constraints_loads_creators import SYSTEMS
 from scipy.sparse.linalg import spsolve
 from solidspy.assemutil import assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
 from .constants import MATERIAL_PARAMETERS
+from .constraints_loads_creators import SYSTEMS
 from .cst_utils import assem_op_cst_quad9_rot4, cst_quad9_rot4
 from .gmesher import create_mesh
 from .utils import (

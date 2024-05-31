@@ -29,9 +29,14 @@ def main():
     params = {"side": 1.0, "mesh_size": 0.1}
     force_reprocess = True
     cst_model = "cst_quad9"
+    constraints_loads = "lower_roller_left_roller_upper_force"
 
     bc_array, solution, nodes, elements = retrieve_solution(
-        geometry_type, params, cst_model, force_reprocess=force_reprocess
+        geometry_type,
+        params,
+        cst_model,
+        constraints_loads,
+        force_reprocess=force_reprocess,
     )
 
     plot_fields(bc_array, nodes, elements, solution)
