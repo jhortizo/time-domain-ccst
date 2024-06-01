@@ -65,7 +65,26 @@ def quarter_ring_rollers_axial_load(line3, cell_data, npts):
 
     axial_node_load = 100
     loads[list(inner_cicle), 0 + 1] = axial_node_load / 2  # force in x direction
-    loads[list(inner_cicle), 1 + 1] = axial_node_load / 2  # force in x direction
+    loads[list(inner_cicle), 1 + 1] = axial_node_load / 2  # force in y direction
+
+    return cons, loads
+
+
+def cantilever_support_load(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+    """
+
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+    right_border = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[list(left_border), 0:2] = -1
+
+    loads = np.zeros((npts, 4))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    loads[list(right_border), 1 + 1] = -100  # force in y direction
 
     return cons, loads
 
@@ -74,4 +93,5 @@ SYSTEMS = {
     "lower_roller_left_roller_upper_force": lower_roller_left_roller_upper_force,
     "borders_fixed": borders_fixed,
     "quarter_ring_rollers_axial_load": quarter_ring_rollers_axial_load,
+    "cantilever_support_load": cantilever_support_load,
 }

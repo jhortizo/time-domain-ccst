@@ -10,6 +10,13 @@ def _create_square_mesh(side: float, mesh_size: float, mesh_file: str) -> None:
     _create_mesh_from_coords(coords, mesh_size, mesh_file)
 
 
+def _create_rectangle_mesh(
+    side_x: float, side_y: float, mesh_size: float, mesh_file: str
+) -> None:
+    coords = [(0, 0), (side_x, 0), (side_x, side_y), (0, side_y)]
+    _create_mesh_from_coords(coords, mesh_size, mesh_file)
+
+
 def _create_triangle_mesh(cathetus: float, mesh_size: float, mesh_file: str):
     coords = [(0, 0), (cathetus, 0), (0, cathetus)]
     _create_mesh_from_coords(coords, mesh_size, mesh_file)
@@ -124,6 +131,7 @@ def create_mesh(geometry_type: str, params: dict, mesh_file: str) -> None:
         "square": _create_square_mesh,
         "triangle": _create_triangle_mesh,
         "quarter_ring": _create_quarter_ring_mesh,
+        "rectangle": _create_rectangle_mesh,
     }
     if geometry_type in mesh_functions:
         mesh_functions[geometry_type](**params, mesh_file=mesh_file)
