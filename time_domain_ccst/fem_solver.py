@@ -5,6 +5,7 @@ Solve for wave propagation in classical mechanics in the given domain.
 import meshio
 import numpy as np
 from scipy.sparse.linalg import spsolve
+from scipy.linalg import eig
 from solidspy.assemutil import assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
@@ -15,7 +16,9 @@ from .gmesher import create_mesh
 from .utils import (
     check_solution_files_exists,
     generate_solution_filenames,
+    load_eigensolution_files,
     load_solution_files,
+    save_eigensolution_files,
     save_solution_files,
 )
 
@@ -65,9 +68,9 @@ def _compute_solution(
     files_dict: dict,
     cst_model: str,
     cons_loads_fcn: callable,
+    eigensolution: bool,
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
-    omega = 1
 
     mats = [
         MATERIAL_PARAMETERS["E"],
@@ -82,18 +85,24 @@ def _compute_solution(
 
     cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
     # Assembly
+
+    can_be_sparse = not(eigensolution)
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
-        elements, mats, nodes, neq, assem_op, uel=cst_element
+        elements, mats, nodes, neq, assem_op, uel=cst_element, sparse=can_be_sparse
     )
 
-    rhs = loadasem(loads, bc_array, neq)
-    # Solution
-    solution = spsolve(stiff_mat - omega**2 * mass_mat, rhs)
+    if eigensolution:
+        eigvals, eigvecs = eig(stiff_mat, b=mass_mat)
+        save_eigensolution_files(bc_array, eigvals, eigvecs, files_dict)
+        return bc_array, eigvals, eigvecs, nodes, elements
 
-    save_solution_files(bc_array, solution, files_dict)
-
-    return bc_array, solution, nodes, elements
+    else:
+        omega = 1
+        rhs = loadasem(loads, bc_array, neq)
+        solution = spsolve(stiff_mat - omega**2 * mass_mat, rhs)
+        save_solution_files(bc_array, solution, files_dict)
+        return bc_array, solution, nodes, elements
 
 
 def retrieve_solution(
@@ -101,20 +110,43 @@ def retrieve_solution(
     params: dict,
     cst_model: str,
     constraints_loads: str,
+    eigensolution: bool = False,
     force_reprocess: bool = False,
 ):
     files_dict = generate_solution_filenames(
-        geometry_type, cst_model, constraints_loads, params
+        geometry_type, cst_model, constraints_loads, eigensolution, params
     )
     cons_loads_fcn = SYSTEMS.get(constraints_loads)
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
-        bc_array, solution = load_solution_files(files_dict)
         _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn)
 
-    else:
-        bc_array, solution, nodes, elements = _compute_solution(
-            geometry_type, params, files_dict, cst_model, cons_loads_fcn
-        )
+        if eigensolution:
+            bc_array, eigvals, eigvecs = load_eigensolution_files(files_dict)
+        else:
+            bc_array, solution = load_solution_files(files_dict)
 
-    return bc_array, solution, nodes, elements
+    else:
+        if eigensolution:
+            bc_array, eigvals, eigvecs, nodes, elements = _compute_solution(
+                geometry_type,
+                params,
+                files_dict,
+                cst_model,
+                cons_loads_fcn,
+                eigensolution,
+            )
+        else:
+            bc_array, solution, nodes, elements = _compute_solution(
+                geometry_type,
+                params,
+                files_dict,
+                cst_model,
+                cons_loads_fcn,
+                eigensolution,
+            )
+
+    if eigensolution:
+        return bc_array, eigvals, eigvecs, nodes, elements
+    else:
+        return bc_array, solution, nodes, elements

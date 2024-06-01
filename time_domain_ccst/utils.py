@@ -25,19 +25,36 @@ def _parse_solution_identifier(geometry_type, cst_model, constraints_loads, para
     return filename
 
 
-def generate_solution_filenames(geometry_type, cst_model, constraints_loads, params):
+def generate_solution_filenames(
+    geometry_type: str,
+    cst_model: str,
+    constraints_loads: str,
+    eigensolution: bool,
+    params: dict,
+):
     "Returns filenames for solution files"
     solution_id = _parse_solution_identifier(
         geometry_type, cst_model, constraints_loads, params
     )
     bc_array_file = f"{SOLUTIONS_FOLDER}/{solution_id}-bc_array.csv"
-    solution_file = f"{SOLUTIONS_FOLDER}/{solution_id}-solution.csv"
     mesh_file = f"{MESHES_FOLDER}/{solution_id}.msh"
-    return {
-        "bc_array": bc_array_file,
-        "solution": solution_file,
-        "mesh": mesh_file,
-    }
+    if eigensolution:
+        eigvals_file = f"{SOLUTIONS_FOLDER}/{solution_id}-eigvals.csv"
+        eigvecs_file = f"{SOLUTIONS_FOLDER}/{solution_id}-eigvecs.csv"
+        return {
+            "bc_array": bc_array_file,
+            "eigvals": eigvals_file,
+            "eigvecs": eigvecs_file,
+            "mesh": mesh_file,
+        }
+
+    else:
+        solution_file = f"{SOLUTIONS_FOLDER}/{solution_id}-solution.csv"
+        return {
+            "bc_array": bc_array_file,
+            "solution": solution_file,
+            "mesh": mesh_file,
+        }
 
 
 def check_solution_files_exists(files_dict):
@@ -53,7 +70,23 @@ def load_solution_files(files_dict):
     return bc_array, solution
 
 
+def load_eigensolution_files(files_dict):
+    "Loads solution files"
+    bc_array = np.loadtxt(files_dict["bc_array"], delimiter=",", dtype=int)
+    bc_array = bc_array.reshape(-1, 1) if bc_array.ndim == 1 else bc_array
+    eigvals = np.loadtxt(files_dict["eigvals"], delimiter=",")
+    eigvecs = np.loadtxt(files_dict["eigvecs"], delimiter=",")
+    return bc_array, eigvals, eigvecs
+
+
 def save_solution_files(bc_array, solution, files_dict):
     "Saves solution files"
     np.savetxt(files_dict["bc_array"], bc_array, delimiter=",")
     np.savetxt(files_dict["solution"], solution, delimiter=",")
+
+
+def save_eigensolution_files(bc_array, eigvals, eigvecs, files_dict):
+    "Saves solution files for eigenvalues and eigenvectors problem"
+    np.savetxt(files_dict["bc_array"], bc_array, delimiter=",")
+    np.savetxt(files_dict["eigvals"], eigvals, delimiter=",")
+    np.savetxt(files_dict["eigvecs"], eigvecs, delimiter=",")
