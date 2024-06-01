@@ -5,6 +5,7 @@ different cases tested the library.
 
 import numpy as np
 
+
 def lower_roller_left_roller_upper_force(line3, cell_data, npts):
     """
     The lower and left borders are fixed in y and x respectively. The upper
@@ -29,6 +30,24 @@ def lower_roller_left_roller_upper_force(line3, cell_data, npts):
     return cons, loads
 
 
+def borders_fixed(line3, cell_data, npts):
+    lower_border = set(line3[cell_data["line3"]["gmsh:physical"] == 1].flatten())
+    right_border = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+    upper_border = set(line3[cell_data["line3"]["gmsh:physical"] == 3].flatten())
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[list(lower_border), :] = -1
+    cons[list(right_border), :] = -1
+    cons[list(upper_border), :] = -1
+    cons[list(left_border), :] = -1
+
+    loads = np.zeros((npts, 4))  # empty loads
+
+    return cons, loads
+
+
 SYSTEMS = {
     "lower_roller_left_roller_upper_force": lower_roller_left_roller_upper_force,
+    'borders_fixed': borders_fixed
 }
