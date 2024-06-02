@@ -89,9 +89,31 @@ def cantilever_support_load(line3, cell_data, npts):
     return cons, loads
 
 
+def plate_hole_rollers_load(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+    """
+
+    lower_border = set(line3[cell_data["line3"]["gmsh:physical"] == 1].flatten())
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+    right_border = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[list(left_border), 0] = -1
+    cons[list(lower_border), 1] = -1
+
+    loads = np.zeros((npts, 4))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    loads[list(right_border), 0 + 1] = 100  # force in x direction
+
+    return cons, loads
+
+
 SYSTEMS = {
     "lower_roller_left_roller_upper_force": lower_roller_left_roller_upper_force,
     "borders_fixed": borders_fixed,
     "quarter_ring_rollers_axial_load": quarter_ring_rollers_axial_load,
     "cantilever_support_load": cantilever_support_load,
+    "plate_hole_rollers_load": plate_hole_rollers_load,
 }
