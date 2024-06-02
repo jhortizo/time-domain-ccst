@@ -13,6 +13,7 @@ solidspy = "^1.1.0.post1"
 solidspy-uels = {git = "https://github.com/nicoguaro/solidspy_uels"}
 sympy = "^1.12"
 ipykernel = "^6.29.4"
+tqdm = "^4.66.4"
 
 
 [tool.poetry.group.dev.dependencies]
