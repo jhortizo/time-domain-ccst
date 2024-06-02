@@ -110,10 +110,18 @@ def plate_hole_rollers_load(line3, cell_data, npts):
     return cons, loads
 
 
+def no_constraints_no_loads(line3, cell_data, npts):
+    cons = np.zeros((npts, 3), dtype=int)
+    loads = np.zeros((npts, 4))
+
+    return cons, loads
+
+
 SYSTEMS = {
     "lower_roller_left_roller_upper_force": lower_roller_left_roller_upper_force,
     "borders_fixed": borders_fixed,
     "quarter_ring_rollers_axial_load": quarter_ring_rollers_axial_load,
     "cantilever_support_load": cantilever_support_load,
     "plate_hole_rollers_load": plate_hole_rollers_load,
+    "floating": no_constraints_no_loads,
 }

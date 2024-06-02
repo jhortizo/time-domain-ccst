@@ -4,8 +4,8 @@ Solve for wave propagation in classical mechanics in the given domain.
 
 import meshio
 import numpy as np
-from scipy.sparse.linalg import spsolve
 from scipy.linalg import eig
+from scipy.sparse.linalg import spsolve
 from solidspy.assemutil import assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
@@ -50,14 +50,10 @@ def _load_mesh(
         quad9  # the first 3 cols correspond to material params and elements params
     )
     # the remaining are the nodes ids
+
     line3 = cells["line3"]
     cell_data = mesh.cell_data
-
-    if cons_loads_fcn is None:
-        cons = np.zeros((npts, 3), dtype=int)
-        loads = np.zeros((npts, 4))
-    else:
-        cons, loads = cons_loads_fcn(line3, cell_data, npts)
+    cons, loads = cons_loads_fcn(line3, cell_data, npts)
 
     return cons, elements, nodes, loads
 
@@ -86,7 +82,7 @@ def _compute_solution(
     cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
     # Assembly
 
-    can_be_sparse = not(eigensolution)
+    can_be_sparse = not (eigensolution)
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
         elements, mats, nodes, neq, assem_op, uel=cst_element, sparse=can_be_sparse
@@ -116,7 +112,7 @@ def retrieve_solution(
     files_dict = generate_solution_filenames(
         geometry_type, cst_model, constraints_loads, eigensolution, params
     )
-    cons_loads_fcn = SYSTEMS.get(constraints_loads)
+    cons_loads_fcn = SYSTEMS[constraints_loads]
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
         _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn)
