@@ -1,10 +1,11 @@
 """
 Contains all the functions to do pretty plots
 """
+
 import warnings
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import solidspy.postprocesor as pos
 
 warnings.filterwarnings(
@@ -13,7 +14,6 @@ warnings.filterwarnings(
 
 
 def plot_fields(bc_array, nodes, elements, solution):
-    
     sol_displacement = pos.complete_disp(bc_array, nodes, solution, ndof_node=3)
     pos.plot_node_field(
         sol_displacement[:, 0], nodes, elements, title="X"
@@ -28,9 +28,12 @@ def plot_fields(bc_array, nodes, elements, solution):
 
 
 def plot_fields_quad9_rot4(
-    bc_array: np.array, nodes: np.array, elements: np.array, solution: np.array
+    bc_array: np.array,
+    nodes: np.array,
+    elements: np.array,
+    solution: np.array,
+    instant_show: bool = True,
 ) -> None:
-
     sol_displacement = pos.complete_disp(bc_array[:, :2], nodes, solution, ndof_node=2)
     pos.plot_node_field(
         sol_displacement[:, 0], nodes, elements, title="X"
@@ -57,4 +60,5 @@ def plot_fields_quad9_rot4(
     contour = ax.tricontourf(x, y, z, levels=50, cmap="viridis")
     fig.colorbar(contour, ax=ax)
     plt.title("W")
-    plt.show()
+    if instant_show:
+        plt.show()
