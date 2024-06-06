@@ -64,18 +64,10 @@ def _compute_solution(
     files_dict: dict,
     cst_model: str,
     cons_loads_fcn: callable,
+    materials: np.ndarray,
     eigensolution: bool,
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
-
-    mats = [
-        MATERIAL_PARAMETERS["E"],
-        MATERIAL_PARAMETERS["NU"],
-        MATERIAL_PARAMETERS["ETA"],
-        MATERIAL_PARAMETERS["RHO"],
-    ]  # order imposed by cst_quad9
-
-    mats = np.array([mats])
 
     create_mesh(geometry_type, params, files_dict["mesh"])
 
@@ -85,7 +77,7 @@ def _compute_solution(
     can_be_sparse = not (eigensolution)
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
-        elements, mats, nodes, neq, assem_op, uel=cst_element, sparse=can_be_sparse
+        elements, materials, nodes, neq, assem_op, uel=cst_element, sparse=can_be_sparse
     )
 
     if eigensolution:
@@ -106,6 +98,7 @@ def retrieve_solution(
     params: dict,
     cst_model: str,
     constraints_loads: str,
+    materials: np.ndarray,
     eigensolution: bool = False,
     force_reprocess: bool = False,
 ):
@@ -130,6 +123,7 @@ def retrieve_solution(
                 files_dict,
                 cst_model,
                 cons_loads_fcn,
+                materials,
                 eigensolution,
             )
         else:
@@ -139,6 +133,7 @@ def retrieve_solution(
                 files_dict,
                 cst_model,
                 cons_loads_fcn,
+                materials,
                 eigensolution,
             )
 

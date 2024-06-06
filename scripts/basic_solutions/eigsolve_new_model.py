@@ -1,11 +1,7 @@
-import warnings
+import numpy as np
 
 from time_domain_ccst.fem_solver import retrieve_solution
 from time_domain_ccst.plotter import plot_fields_quad9_rot4
-
-warnings.filterwarnings(
-    "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
-)  # ignore unimportant warning from solidspy
 
 
 def main():
@@ -14,6 +10,18 @@ def main():
     force_reprocess = True
     cst_model = "cst_quad9_rot4"
     constraints_loads = "borders_fixed"
+
+    materials = np.array(
+        [
+            [
+                200e9,  # E, young's modulus
+                0.29,  # nu, poisson's ratio
+                1e4,  # eta, coupling parameter
+                7900,  # rho, density
+            ]
+        ]
+    )
+
     eigsolution = True
 
     bc_array, eigvals, eigvecs, nodes, elements = retrieve_solution(
@@ -21,6 +29,7 @@ def main():
         params,
         cst_model,
         constraints_loads,
+        materials,
         eigensolution=eigsolution,
         force_reprocess=force_reprocess,
     )

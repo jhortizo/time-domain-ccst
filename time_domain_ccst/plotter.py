@@ -1,10 +1,16 @@
 """
 Contains all the functions to do pretty plots
 """
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
 import solidspy.postprocesor as pos
+
+warnings.filterwarnings(
+    "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
+)  # ignore unimportant warning from solidspy
+
 
 def plot_fields(bc_array, nodes, elements, solution):
     
