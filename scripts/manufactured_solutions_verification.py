@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,6 +15,11 @@ from time_domain_ccst.cst_utils import assem_op_cst_quad9_rot4, cst_quad9_rot4
 from time_domain_ccst.fem_solver import _load_mesh
 from time_domain_ccst.gmesher import _create_square_mesh
 
+warnings.filterwarnings(
+    "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
+)  # ignore unimportant warning from solidspy
+
+
 x, y = sp.symbols("x y")
 E = 1
 nu = 0.3
@@ -23,17 +29,16 @@ omega = 1
 
 
 def manufactured_solution() -> sp.Matrix:
-    # u = sp.Matrix(
-    #     [
-    #         x * (1 - x) * y * (1 - y) * sp.sin(sp.pi * x) * sp.sin(sp.pi * y),
-    #         x * (1 - x) * y * (1 - y) * sp.cos(sp.pi * x) * sp.cos(sp.pi * y),
-    #     ]
-    # )
-
     u = sp.Matrix(
-        [sp.sin(sp.pi * x) * sp.sin(sp.pi * y), 
-         sp.sin(sp.pi * y) * sp.sin(sp.pi * x)]
+        [
+            x * (1 - x) * y * (1 - y) * sp.sin(sp.pi * x) * sp.sin(sp.pi * y),
+            x * (1 - x) * y * (1 - y) * sp.cos(sp.pi * x) * sp.cos(sp.pi * y),
+        ]
     )
+
+    # u = sp.Matrix(
+    #     [sp.sin(sp.pi * x) * sp.sin(sp.pi * y), sp.sin(sp.pi * y) * sp.sin(sp.pi * x)]
+    # )
 
     u_lambdified = sp.lambdify((x, y), u, "numpy")
     return u, u_lambdified
@@ -90,7 +95,7 @@ def impose_body_force_loads(
     # they are already marked as fixed, so those loads will be ignored
     loads[:, 1:3] = body_force_nodes
 
-    return loads # checked
+    return loads
 
 
 def solve_manufactured_solution(
@@ -127,6 +132,8 @@ def solve_manufactured_solution(
         )
 
         rhs = loadasem(loads, bc_array, neq)
+        # approximation to eval the function weighted by the form functions
+        rhs = mass_mat @ rhs
         solution = spsolve(stiff_mat - omega**2 * mass_mat, rhs)
 
         np.savetxt(solution_file, solution, delimiter=",")
@@ -145,7 +152,7 @@ def main():
     u, u_fnc = manufactured_solution()
     body_force_fcn = calculate_body_force_fcn(u)
 
-    mesh_sizes = [1.0, 0.1, 0.05]
+    mesh_sizes = np.logspace(np.log10(1), np.log10(1e-2), num=5)
 
     rmses = []
     max_errors = []
@@ -154,6 +161,7 @@ def main():
         bc_array, solution, nodes, elements = solve_manufactured_solution(
             mesh_size, body_force_fcn, force_reprocess=True
         )
+        print("Mesh size:", len(elements), " elements")
 
         u_fem = complete_disp(bc_array, nodes, solution, ndof_node=2)
 
@@ -162,9 +170,16 @@ def main():
         u_true = np.squeeze(u_true)
         u_true = np.swapaxes(u_true, 0, 1)
 
-        plot_node_field(u_fem[:, 0:2], nodes, elements, title=[f"u_x FEM_{len(elements)}_elements", f"u_y_FEM_{len(elements)}_elements"])
+        plot_node_field(
+            u_fem[:, 0],
+            nodes,
+            elements,
+            title=[
+                f"u_x FEM_{len(elements)}_elements",
+            ],
+        )
 
-        plot_node_field(u_true, nodes, elements, title=["u_x True", "u_y_True"])
+        plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
 
         rmse = np.sqrt(np.mean((u_true - u_fem) ** 2))
         max_error = np.max(np.abs(u_true - u_fem))
@@ -175,8 +190,8 @@ def main():
 
     # and then plot the results
     plt.figure()
-    plt.plot(n_elements, rmses, label="RMSE")
-    plt.plot(n_elements, max_errors, label="Max Error")
+    plt.loglog(n_elements, rmses, label="RMSE")
+    plt.loglog(n_elements, max_errors, label="Max Error")
     plt.xlabel("Number of elements")
     plt.ylabel("Error")
     plt.grid()
