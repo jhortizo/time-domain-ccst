@@ -23,11 +23,16 @@ omega = 1
 
 
 def manufactured_solution() -> sp.Matrix:
+    # u = sp.Matrix(
+    #     [
+    #         x * (1 - x) * y * (1 - y) * sp.sin(sp.pi * x) * sp.sin(sp.pi * y),
+    #         x * (1 - x) * y * (1 - y) * sp.cos(sp.pi * x) * sp.cos(sp.pi * y),
+    #     ]
+    # )
+
     u = sp.Matrix(
-        [
-            x * (1 - x) * y * (1 - y) * sp.sin(sp.pi * x) * sp.sin(sp.pi * y),
-            x * (1 - x) * y * (1 - y) * sp.cos(sp.pi * x) * sp.cos(sp.pi * y),
-        ]
+        [sp.sin(sp.pi * x) * sp.sin(sp.pi * y), 
+         sp.sin(sp.pi * y) * sp.sin(sp.pi * x)]
     )
 
     u_lambdified = sp.lambdify((x, y), u, "numpy")
@@ -47,17 +52,17 @@ def calculate_body_force_fcn(u: sp.Matrix) -> sp.Matrix:
 
     laplacian_u = sp.Matrix(
         [
-            sp.diff(double_curl_u[0], x, 2) + sp.diff(double_curl_u[1], y, 2),
-            sp.diff(double_curl_u[0], x, 2) + sp.diff(double_curl_u[1], y, 2),
+            sp.diff(double_curl_u[0], x, 2) + sp.diff(double_curl_u[0], y, 2),
+            sp.diff(double_curl_u[1], x, 2) + sp.diff(double_curl_u[1], y, 2),
         ]
     )
 
-    term1 = c1_squared * sp.Matrix([sp.diff(div, x), sp.diff(div, y)])
+    term1 = c1_squared * sp.Matrix([sp.diff(div, x), sp.diff(div, y)])  # checked
     term2 = c2_squared * (double_curl_u - l_squared * laplacian_u)
 
     rhs = -(omega**2) * u
 
-    f = term1 - term2 + rhs
+    f = rhs - (term1 - term2)
     # f_simplified = f.applyfunc(sp.simplify)
 
     f_lambdified = sp.lambdify((x, y), f, "numpy")
@@ -72,12 +77,20 @@ def generate_load_mesh(mesh_size: float, mesh_file: str):
 
 
 def impose_body_force_loads(
-    loads: np.ndarray, nodes: np.ndarray, body_force_fcn: callable
+    loads: np.ndarray, nodes: np.ndarray, body_force_fcn: callable, elements
 ):
     loads[:, 0] = np.arange(len(nodes))  # specify nodes
-    loads[:, 1:3] = body_force_fcn(nodes[:, 1], nodes[:, 2]).reshape(-1, 2)
 
-    return loads
+    # correctly reorder array from (2, 1, nnodes) to (nnodes, 2)
+    body_force_nodes = body_force_fcn(nodes[:, 1], nodes[:, 2])
+    body_force_nodes = np.squeeze(body_force_nodes)
+    body_force_nodes = np.swapaxes(body_force_nodes, 0, 1)
+
+    # there is no problem in applying loads on the boudaries because
+    # they are already marked as fixed, so those loads will be ignored
+    loads[:, 1:3] = body_force_nodes
+
+    return loads # checked
 
 
 def solve_manufactured_solution(
@@ -106,7 +119,7 @@ def solve_manufactured_solution(
 
         mats = np.array([mats])
 
-        loads = impose_body_force_loads(loads, nodes, body_force_fcn)
+        loads = impose_body_force_loads(loads, nodes, body_force_fcn, elements)
 
         assem_op, bc_array, neq = assem_op_cst_quad9_rot4(cons, elements)
         stiff_mat, mass_mat = assembler(
@@ -144,15 +157,14 @@ def main():
 
         u_fem = complete_disp(bc_array, nodes, solution, ndof_node=2)
 
-        u_true = u_fnc(nodes[:, 1], nodes[:, 2]).reshape(-1, 2)
+        # correctly reorder array from (2, 1, nnodes) to (nnodes, 2)
+        u_true = u_fnc(nodes[:, 1], nodes[:, 2])
+        u_true = np.squeeze(u_true)
+        u_true = np.swapaxes(u_true, 0, 1)
 
-        plot_node_field(
-            u_fem[:, 0], nodes, elements, title="u_x FEM"
-        )
+        plot_node_field(u_fem[:, 0:2], nodes, elements, title=[f"u_x FEM_{len(elements)}_elements", f"u_y_FEM_{len(elements)}_elements"])
 
-        plot_node_field(
-            u_true[:, 0], nodes, elements, title="u_x True"
-        )
+        plot_node_field(u_true, nodes, elements, title=["u_x True", "u_y_True"])
 
         rmse = np.sqrt(np.mean((u_true - u_fem) ** 2))
         max_error = np.max(np.abs(u_true - u_fem))
