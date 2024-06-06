@@ -110,6 +110,23 @@ def plate_hole_rollers_load(line3, cell_data, npts):
     return cons, loads
 
 
+def circle_borders_fixed(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+    """
+
+    upper_circle = set(line3[cell_data["line3"]["gmsh:physical"] == 1].flatten())
+    lower_circle = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[list(upper_circle), 0:2] = -1
+    cons[list(lower_circle), 0:2] = -1
+
+    loads = np.zeros((npts, 4))  # empty loads
+
+    return cons, loads
+
+
 def no_constraints_no_loads(line3, cell_data, npts):
     cons = np.zeros((npts, 3), dtype=int)
     loads = np.zeros((npts, 4))
@@ -123,5 +140,6 @@ SYSTEMS = {
     "quarter_ring_rollers_axial_load": quarter_ring_rollers_axial_load,
     "cantilever_support_load": cantilever_support_load,
     "plate_hole_rollers_load": plate_hole_rollers_load,
+    "circle_borders_fixed": circle_borders_fixed,
     "floating": no_constraints_no_loads,
 }
