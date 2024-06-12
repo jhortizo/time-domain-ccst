@@ -9,7 +9,6 @@ from scipy.sparse.linalg import spsolve
 from solidspy.assemutil import assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
 
-from .constants import MATERIAL_PARAMETERS
 from .constraints_loads_creators import SYSTEMS
 from .cst_utils import assem_op_cst_quad9_rot4, cst_quad9_rot4
 from .gmesher import create_mesh
@@ -18,6 +17,7 @@ from .utils import (
     generate_solution_filenames,
     load_eigensolution_files,
     load_solution_files,
+    postprocess_eigsolution,
     save_eigensolution_files,
     save_solution_files,
 )
@@ -82,13 +82,14 @@ def _compute_solution(
 
     if eigensolution:
         eigvals, eigvecs = eig(stiff_mat, b=mass_mat)
+        eigvals, eigvecs = postprocess_eigsolution(eigvals, eigvecs)
         save_eigensolution_files(bc_array, eigvals, eigvecs, files_dict)
         return bc_array, eigvals, eigvecs, nodes, elements
 
     else:
-        omega = 1
+        # omega = 1
         rhs = loadasem(loads, bc_array, neq)
-        solution = spsolve(stiff_mat - omega**2 * mass_mat, rhs)
+        solution = spsolve(stiff_mat, rhs)
         save_solution_files(bc_array, solution, files_dict)
         return bc_array, solution, nodes, elements
 

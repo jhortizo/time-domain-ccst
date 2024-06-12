@@ -90,3 +90,15 @@ def save_eigensolution_files(bc_array, eigvals, eigvecs, files_dict):
     np.savetxt(files_dict["bc_array"], bc_array, delimiter=",")
     np.savetxt(files_dict["eigvals"], eigvals, delimiter=",")
     np.savetxt(files_dict["eigvecs"], eigvecs, delimiter=",")
+
+
+def postprocess_eigsolution(eigvals, eigvecs):
+    "Postprocesses eigenvalues and eigenvectors"
+    # check eigvals are real
+    if not np.allclose(eigvals.imag, 0):
+        raise ValueError("Eigenvalues are not real")
+    
+    order = np.argsort(eigvals)
+    eigvals = np.sort(eigvals).real
+    eigvecs = eigvecs[:, order].real
+    return eigvals, eigvecs

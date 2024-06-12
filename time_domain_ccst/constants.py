@@ -1,12 +1,5 @@
 import os
 
-MATERIAL_PARAMETERS = {
-    "E": 200e9,
-    "NU": 0.29,
-    "ETA": 1e4,
-    "RHO": 7900,
-}
-
 MESHES_FOLDER = "data/meshes"
 SOLUTIONS_FOLDER = "data/solutions"
 IMAGES_FOLDER = "data/images"
