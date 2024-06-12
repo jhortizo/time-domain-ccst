@@ -65,9 +65,10 @@ def calculate_body_force_fcn(u: sp.Matrix) -> sp.Matrix:
     term1 = c1_squared * sp.Matrix([sp.diff(div, x), sp.diff(div, y)])  # checked
     term2 = c2_squared * (double_curl_u - l_squared * laplacian_u)
 
-    rhs = -(omega**2) * u
+    # rhs = -(omega**2) * u
+    # rhs = 0
 
-    f = rhs - (term1 - term2)
+    f = - (term1 - term2)
     # f_simplified = f.applyfunc(sp.simplify)
 
     f_lambdified = sp.lambdify((x, y), f, "numpy")
@@ -134,7 +135,7 @@ def solve_manufactured_solution(
         rhs = loadasem(loads, bc_array, neq)
         # approximation to eval the function weighted by the form functions
         rhs = mass_mat @ rhs
-        solution = spsolve(stiff_mat - omega**2 * mass_mat, rhs)
+        solution = spsolve(stiff_mat, rhs)
 
         np.savetxt(solution_file, solution, delimiter=",")
         np.savetxt(bc_array_file, bc_array, delimiter=",")
@@ -153,6 +154,7 @@ def main():
     body_force_fcn = calculate_body_force_fcn(u)
 
     mesh_sizes = np.logspace(np.log10(1), np.log10(1e-2), num=5)
+    mesh_sizes = mesh_sizes[:-1]
 
     rmses = []
     max_errors = []
@@ -164,22 +166,24 @@ def main():
         print("Mesh size:", len(elements), " elements")
 
         u_fem = complete_disp(bc_array, nodes, solution, ndof_node=2)
+        # loads = complete_disp(bc_array, nodes, rhs, ndof_node=2)
+        # plot_node_field(loads, nodes, elements, title=["loads_x", "loads_y "])
 
         # correctly reorder array from (2, 1, nnodes) to (nnodes, 2)
         u_true = u_fnc(nodes[:, 1], nodes[:, 2])
         u_true = np.squeeze(u_true)
         u_true = np.swapaxes(u_true, 0, 1)
 
-        plot_node_field(
-            u_fem[:, 0],
-            nodes,
-            elements,
-            title=[
-                f"u_x FEM_{len(elements)}_elements",
-            ],
-        )
-
-        plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
+        if mesh_size == mesh_sizes[-1]:
+            plot_node_field(
+                u_fem[:, 0],
+                nodes,
+                elements,
+                title=[
+                    f"u_x FEM_{len(elements)}_elements",
+                ],
+            )
+            plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
 
         rmse = np.sqrt(np.mean((u_true - u_fem) ** 2))
         max_error = np.max(np.abs(u_true - u_fem))
@@ -188,16 +192,23 @@ def main():
         rmses.append(rmse)
         max_errors.append(max_error)
 
+    log_mesh = np.log10(mesh_sizes)
+    log_rmse = np.log10(rmses)
+
+    slope = np.polyfit(log_mesh, log_rmse, 1)[0]
+
     # and then plot the results
     plt.figure()
-    plt.loglog(n_elements, rmses, label="RMSE")
-    plt.loglog(n_elements, max_errors, label="Max Error")
-    plt.xlabel("Number of elements")
+    plt.loglog(mesh_sizes, rmses, label="RMSE")
+    # plt.loglog(n_elements, max_errors, label="Max Error")
+    plt.xlabel("Mesh length")
     plt.ylabel("Error")
     plt.grid()
     plt.legend()
 
     plt.show()
+
+    print("Slope:", slope)
 
 
 if __name__ == "__main__":
