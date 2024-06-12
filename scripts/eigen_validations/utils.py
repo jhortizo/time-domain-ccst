@@ -39,12 +39,12 @@ def check_eigenvals_convergence(
         n_elements.append(len(elements))
 
         if plot_style == "all":
-            n_eigvec = 1
+            n_eigvec = 3
             plot_fields_quad9_rot4(
                 bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=False
             )
         elif plot_style == "last" and mesh_size == mesh_sizes[-1]:
-            n_eigvec = 1
+            n_eigvec = 10
             plot_fields_quad9_rot4(
                 bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=False
             )
@@ -57,6 +57,10 @@ def check_eigenvals_convergence(
     second_eigvals_diff = np.diff(second_eigvals)
     second_eigvals_diff = np.insert(second_eigvals_diff, 0, np.nan)
 
+    tenth_eigvals = [eigvals[9] for eigvals in eigvalss]
+    tenth_eigvals_diff = np.diff(tenth_eigvals)
+    tenth_eigvals_diff = np.insert(tenth_eigvals_diff, 0, np.nan)
+
     df = pd.DataFrame(
         {
             "Mesh Size": mesh_sizes,
@@ -65,14 +69,15 @@ def check_eigenvals_convergence(
             "First Eigenvalue Diff": first_eigvals_diff,
             "Second Eigenvalue": second_eigvals,
             "Second Eigenvalue Diff": second_eigvals_diff,
+            "Tenth Eigenvalue": tenth_eigvals,
+            "Tenth Eigenvalue Diff": tenth_eigvals_diff,
         }
     )
 
     print(df)
 
     plt.figure()
-    plt.plot(mesh_sizes, first_eigvals, label="First Eigenvalue")
-    plt.plot(mesh_sizes, second_eigvals, label="Second Eigenvalue")
+    plt.plot(n_elements, tenth_eigvals, label="Tenth Eigenvalue")
     plt.xlabel("Mesh Size")
     plt.ylabel("Eigenvalue")
     plt.legend()

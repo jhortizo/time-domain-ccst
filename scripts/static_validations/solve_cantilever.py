@@ -6,7 +6,7 @@ from time_domain_ccst.plotter import plot_fields_quad9_rot4
 
 def main():
     geometry_type = "rectangle"
-    params = {"side_y": 1.0, "side_x": 3.0, "mesh_size": 0.5}
+    params = {"side_y": 1.0, "side_x": 20.0, "mesh_size": 0.4}
     force_reprocess = True
     cst_model = "cst_quad9_rot4"
     constraints_loads = "cantilever_support_load"
