@@ -1,11 +1,9 @@
-import numpy as np
-from tqdm import tqdm
 import matplotlib.pyplot as plt
+import numpy as np
+from solidspy.postprocesor import complete_disp
+from tqdm import tqdm
 
 from time_domain_ccst.fem_solver import retrieve_solution
-from time_domain_ccst.plotter import plot_fields_quad9_rot4
-
-from solidspy.postprocesor import complete_disp, plot_node_field
 
 
 def main():
@@ -53,7 +51,7 @@ def main():
         nodes_lowers.append(nodes_lower)
         u_lowers.append(u_lower)
 
-    max_u_lower_val = 5e4 # TODO: des machetize this
+    max_u_lower_val = 5e4  # TODO: des machetize this
 
     norm_u_lowers = [u_lower / max_u_lower_val for u_lower in u_lowers]
 
@@ -72,7 +70,9 @@ def main():
     plt.ylabel("Vertical displacement")
     plt.legend()
     plt.grid()
-    plt.savefig("compare_cantilever_displacement.png", dpi=300) # TODO: save in proper folder
+    plt.savefig(
+        "compare_cantilever_displacement.png", dpi=300
+    )  # TODO: save in proper folder
     plt.show()
 
 
