@@ -23,9 +23,7 @@ def main():
 
     eigsolution = True
 
-    mesh_sizes = np.unique(
-        np.concatenate((np.logspace(0, -0.75, 9), np.logspace(-0.75, -1.5, 3)))
-    )[::-1]
+    mesh_sizes = np.logspace(0, -0.75, 9)
     plot_style = "last"
 
     check_eigenvals_convergence(
