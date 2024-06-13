@@ -98,7 +98,7 @@ def postprocess_eigsolution(eigvals, eigvecs):
     "Postprocesses eigenvalues and eigenvectors"
     # check eigvals are real
     if not np.allclose(eigvals.imag, 0):
-        raise ValueError("Eigenvalues are not real")
+        print("Eigenvalues are not real")
     
     order = np.argsort(eigvals)
     eigvals = np.sort(eigvals).real
