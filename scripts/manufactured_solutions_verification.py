@@ -68,7 +68,7 @@ def calculate_body_force_fcn(u: sp.Matrix) -> sp.Matrix:
     # rhs = -(omega**2) * u
     # rhs = 0
 
-    f = - (term1 - term2)
+    f = -(term1 - term2)
     # f_simplified = f.applyfunc(sp.simplify)
 
     f_lambdified = sp.lambdify((x, y), f, "numpy")

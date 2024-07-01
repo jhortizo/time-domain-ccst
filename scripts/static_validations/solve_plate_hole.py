@@ -14,10 +14,10 @@ def main():
     materials = np.array(
         [
             [
-                1, # E, young's modulus
-                0.29, # nu, poisson's ratio
-                1, # eta, coupling parameter
-                1, # rho, density
+                1,  # E, young's modulus
+                0.29,  # nu, poisson's ratio
+                1,  # eta, coupling parameter
+                1,  # rho, density
             ]
         ]
     )

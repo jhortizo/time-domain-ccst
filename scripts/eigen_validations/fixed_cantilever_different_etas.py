@@ -1,7 +1,33 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from time_domain_ccst.constants import IMAGES_FOLDER
 from time_domain_ccst.fem_solver import retrieve_solution
+
+
+def do_eigenvalue_comparison_plotting(
+    h_l_ratios: np.ndarray, eigvalss: np.ndarray, show: bool = False
+) -> None:
+    plt.rcParams["font.size"] = 18
+    plt.figure(figsize=(12, 6))
+    plt.plot(np.arange(1000), eigvalss[[0, -1], :].T, "-")
+    plt.xlabel("Eigenvalue")
+    plt.ylabel("Value")
+    plt.legend([f"h/l = {h_l_ratios[i]:.0e}" for i in [0, -1]])
+    plt.grid()
+    plt.savefig(IMAGES_FOLDER + "/compare_cantilever_eigenvalues.png", dpi=300)
+
+    plt.show() if show else plt.close()
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(h_l_ratios, eigvalss[:, 2:7], "o-")
+    plt.xlabel("h/l")
+    plt.ylabel("Eigenvalues")
+    plt.legend([f"Eigenvalue {i}" for i in range(3, 8)])
+    plt.xscale("log")
+    plt.grid()
+    plt.savefig(IMAGES_FOLDER + "/eigenvalue_vs_hlratio.png", dpi=300)
+    plt.show() if show else plt.close()
 
 
 def main():
@@ -30,7 +56,7 @@ def main():
         materials = np.array([[E, nu, etas[i], rho]])
         custom_str = f"h_l_ratio_{h_l_ratios[i]:.2e}"
 
-        bc_array, eigvals, eigvecs, nodes, elements = retrieve_solution(
+        _, eigvals, _, _, _ = retrieve_solution(
             geometry_type,
             params,
             cst_model,
@@ -45,28 +71,7 @@ def main():
 
     eigvalss = np.array(eigvalss)
 
-    plt.rcParams["font.size"] = 18
-    plt.figure(figsize=(12, 6))
-    plt.plot(np.arange(1000),  eigvalss[[0, -1], :].T, '-')
-    plt.xlabel('Eigenvalue')
-    plt.ylabel('Value')
-    plt.legend([f"h/l = {h_l_ratios[i]:.0e}" for i in [0, -1]]
-                )
-    plt.grid()
-    plt.savefig('compare_cantilever_eigenvalues.png', dpi=300)
-    plt.show()
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(h_l_ratios, eigvalss[:, 2:7], "o-")
-    plt.xlabel("h/l")
-    plt.ylabel("Eigenvalues")
-    plt.legend([f"Eigenvalue {i}" for i in range(3, 8)])
-    plt.xscale("log")
-    plt.grid()
-    plt.savefig('eigenvalue_vs_hlratio.png', dpi=300)
-    plt.show()
-
-
+    do_eigenvalue_comparison_plotting(h_l_ratios, eigvalss)
 
 
 if __name__ == "__main__":

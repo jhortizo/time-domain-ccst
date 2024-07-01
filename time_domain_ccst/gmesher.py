@@ -136,9 +136,7 @@ def _create_plate_hole_mesh(
     gmsh.finalize()
 
 
-def _create_circle_mesh(
-    radius: float, mesh_size: float, mesh_file: str
-):
+def _create_circle_mesh(radius: float, mesh_size: float, mesh_file: str):
     coords = [
         (radius, 0),
         (-radius, 0),

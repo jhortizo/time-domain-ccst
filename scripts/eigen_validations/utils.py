@@ -33,7 +33,7 @@ def check_eigenvals_convergence(
             eigensolution=eigsolution,
             force_reprocess=force_reprocess,
         )
-        print('Number of elements', len(elements))
+        print("Number of elements", len(elements))
 
         eigvalss.append(eigvals)
         n_elements.append(len(elements))
