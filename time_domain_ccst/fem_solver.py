@@ -87,7 +87,8 @@ def _compute_solution(
         return bc_array, eigvals, eigvecs, nodes, elements
 
     else:
-        # omega = 1
+        # static solution does not take into acount the mass matrix
+        # for freq. solution, do spsolve(stiff_mat - omega**2 * mass_mat, rhs)
         rhs = loadasem(loads, bc_array, neq)
         solution = spsolve(stiff_mat, rhs)
         save_solution_files(bc_array, solution, files_dict)
