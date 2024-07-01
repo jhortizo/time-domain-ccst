@@ -4,6 +4,31 @@ from solidspy.postprocesor import complete_disp
 from tqdm import tqdm
 
 from time_domain_ccst.fem_solver import retrieve_solution
+from time_domain_ccst.constants import IMAGES_FOLDER
+
+
+def do_comparison_plotting(
+    nodes_lowers: list[np.ndarray],
+    norm_u_lowers: list[np.ndarray],
+    h_l_ratios: np.ndarray,
+) -> None:
+    plt.rcParams["font.size"] = 24
+    plt.figure(figsize=(12, 7))
+
+    for i in range(len(h_l_ratios)):
+        plt.plot(
+            nodes_lowers[i][:, 1],
+            norm_u_lowers[i, :],
+            ".",
+            label=f"h/l = {h_l_ratios[i]:.0e}",
+        )
+
+    plt.xlabel(r"$x$")
+    plt.ylabel("Vertical displacement")
+    plt.legend()
+    plt.grid()
+    plt.savefig(IMAGES_FOLDER + "/compare_cantilever_displacement.png", dpi=300)
+    plt.show()
 
 
 def main():
@@ -25,13 +50,13 @@ def main():
     ls = h / h_l_ratios
     etas = ls**2 * mu
 
-    u_lowers = []
+    u_y_lowers = []
     nodes_lowers = []
     for i in tqdm(range(len(h_l_ratios)), desc="h/l ratios"):
         materials = np.array([[E, nu, etas[i], rho]])
         custom_str = f"h_l_ratio_{h_l_ratios[i]:.2e}"
 
-        bc_array, solution, nodes, elements = retrieve_solution(
+        bc_array, solution, nodes, _ = retrieve_solution(
             geometry_type,
             params,
             cst_model,
@@ -49,31 +74,11 @@ def main():
         u_lower = u[low_border_ids]
 
         nodes_lowers.append(nodes_lower)
-        u_lowers.append(u_lower)
+        u_y_lowers.append(u_lower[:, 1])
 
-    max_u_lower_val = 5e4  # TODO: des machetize this
-
-    norm_u_lowers = [u_lower / max_u_lower_val for u_lower in u_lowers]
-
-    plt.rcParams["font.size"] = 24
-    plt.figure(figsize=(12, 6))
-
-    for i in range(len(h_l_ratios)):
-        plt.plot(
-            nodes_lowers[i][:, 1],
-            norm_u_lowers[i][:, 0],
-            ".",
-            label=f"h/l = {h_l_ratios[i]:.0e}",
-        )
-
-    plt.xlabel("x")
-    plt.ylabel("Vertical displacement")
-    plt.legend()
-    plt.grid()
-    plt.savefig(
-        "compare_cantilever_displacement.png", dpi=300
-    )  # TODO: save in proper folder
-    plt.show()
+    max_u_lower_val = abs(np.array(u_y_lowers).min())
+    norm_u_lowers = u_y_lowers / max_u_lower_val
+    do_comparison_plotting(nodes_lowers, norm_u_lowers, h_l_ratios)
 
 
 if __name__ == "__main__":
