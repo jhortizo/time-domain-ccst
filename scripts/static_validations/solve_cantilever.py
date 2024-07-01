@@ -3,8 +3,8 @@ import numpy as np
 from solidspy.postprocesor import complete_disp
 from tqdm import tqdm
 
-from time_domain_ccst.fem_solver import retrieve_solution
 from time_domain_ccst.constants import IMAGES_FOLDER
+from time_domain_ccst.fem_solver import retrieve_solution
 
 
 def do_comparison_plotting(

@@ -5,7 +5,9 @@ import numpy as np
 from .constants import MESHES_FOLDER, SOLUTIONS_FOLDER
 
 
-def _parse_solution_identifier(geometry_type, cst_model, constraints_loads, params, custom_str):
+def _parse_solution_identifier(
+    geometry_type, cst_model, constraints_loads, params, custom_str
+):
     "Returnss strign associated with run parameters"
 
     params_str = [
@@ -99,7 +101,7 @@ def postprocess_eigsolution(eigvals, eigvecs):
     # check eigvals are real
     if not np.allclose(eigvals.imag, 0):
         print("Eigenvalues are not real")
-    
+
     order = np.argsort(eigvals)
     eigvals = np.sort(eigvals).real
     eigvecs = eigvecs[:, order].real

@@ -106,7 +106,12 @@ def retrieve_solution(
     custom_str: str = "",
 ):
     files_dict = generate_solution_filenames(
-        geometry_type, cst_model, constraints_loads, eigensolution, params, custom_str=custom_str
+        geometry_type,
+        cst_model,
+        constraints_loads,
+        eigensolution,
+        params,
+        custom_str=custom_str,
     )
     cons_loads_fcn = SYSTEMS[constraints_loads]
 

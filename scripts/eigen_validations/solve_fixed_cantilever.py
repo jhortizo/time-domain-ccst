@@ -36,7 +36,7 @@ def main():
         force_reprocess,
         mesh_sizes,
         plot_style,
-    ) # with mesh size = 0.42, the eigenvalues already converge (below 5% variation)
+    )  # with mesh size = 0.42, the eigenvalues already converge (below 5% variation)
 
 
 if __name__ == "__main__":
