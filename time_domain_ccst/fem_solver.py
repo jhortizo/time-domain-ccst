@@ -2,13 +2,16 @@
 Solve for wave propagation in classical mechanics in the given domain.
 """
 
+from typing import Literal
+
 import meshio
 import numpy as np
 from scipy.linalg import eig
 from scipy.sparse.linalg import spsolve
-from solidspy.assemutil import assembler, loadasem
-from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
+from solidspy.assemutil import DME, assembler, loadasem
+from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9, elast_quad9
 
+from .constants import SOLUTION_TYPES
 from .constraints_loads_creators import SYSTEMS
 from .cst_utils import assem_op_cst_quad9_rot4, cst_quad9_rot4
 from .gmesher import create_mesh
@@ -18,13 +21,15 @@ from .utils import (
     load_eigensolution_files,
     load_solution_files,
     postprocess_eigsolution,
+    save_dynamic_solution_files,
     save_eigensolution_files,
-    save_solution_files,
+    save_static_solution_files,
 )
 
 cst_model_functions = {
     "cst_quad9_rot4": (assem_op_cst_quad9_rot4, cst_quad9_rot4),
     "cst_quad9": (assem_op_cst, cst_quad9),
+    "classical_quad9": (DME, elast_quad9),
 }
 
 
@@ -65,7 +70,10 @@ def _compute_solution(
     cst_model: str,
     cons_loads_fcn: callable,
     materials: np.ndarray,
-    eigensolution: bool,
+    scenario_to_solve: Literal["static", "eigenproblem", "time-marching"],
+    dt: float | None,
+    n_t_iters: int | None,
+    initial_state: np.ndarray | None,
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
 
@@ -74,25 +82,41 @@ def _compute_solution(
     cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
     # Assembly
 
-    can_be_sparse = not (eigensolution)
+    can_be_sparse = not (scenario_to_solve == "eigenproblem")
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
         elements, materials, nodes, neq, assem_op, uel=cst_element, sparse=can_be_sparse
     )
 
-    if eigensolution:
+    if scenario_to_solve == "static":
+        # static solution does not take into acount the mass matrix
+        # for freq. solution, do spsolve(stiff_mat - omega**2 * mass_mat, rhs)
+        rhs = loadasem(loads, bc_array, neq)
+        solution = spsolve(stiff_mat, rhs)
+        save_static_solution_files(bc_array, solution, files_dict)
+        return bc_array, solution, nodes, elements
+
+    elif scenario_to_solve == "eigenproblem":
         eigvals, eigvecs = eig(stiff_mat, b=mass_mat)
         eigvals, eigvecs = postprocess_eigsolution(eigvals, eigvecs)
         save_eigensolution_files(bc_array, eigvals, eigvecs, files_dict)
         return bc_array, eigvals, eigvecs, nodes, elements
 
-    else:
-        # static solution does not take into acount the mass matrix
-        # for freq. solution, do spsolve(stiff_mat - omega**2 * mass_mat, rhs)
+    elif scenario_to_solve == "time-marching":
         rhs = loadasem(loads, bc_array, neq)
-        solution = spsolve(stiff_mat, rhs)
-        save_solution_files(bc_array, solution, files_dict)
-        return bc_array, solution, nodes, elements
+        solutions = np.zeros((n_t_iters, neq))
+        solutions[0] = initial_state  # assume constant behavior in first steps
+        solutions[1] = initial_state
+        for i in range(1, n_t_iters - 1):
+            b = (
+                dt**2 * rhs
+                + 2 * mass_mat @ solutions[i]
+                - mass_mat @ solutions[i - 1]
+                - dt**2 * stiff_mat @ solutions[i]
+            )
+            solutions[i + 1] = spsolve(mass_mat, b)
+        save_dynamic_solution_files(bc_array, solutions, files_dict)
+        return bc_array, solutions, nodes, elements
 
 
 def retrieve_solution(
@@ -101,15 +125,18 @@ def retrieve_solution(
     cst_model: str,
     constraints_loads: str,
     materials: np.ndarray,
-    eigensolution: bool = False,
+    scenario_to_solve: SOLUTION_TYPES,
     force_reprocess: bool = False,
     custom_str: str = "",
+    dt: float | None = None,
+    n_t_iter: int | None = None,
+    initial_state: np.ndarray | None = None,
 ):
     files_dict = generate_solution_filenames(
         geometry_type,
         cst_model,
         constraints_loads,
-        eigensolution,
+        scenario_to_solve,
         params,
         custom_str=custom_str,
     )
@@ -118,13 +145,13 @@ def retrieve_solution(
     if check_solution_files_exists(files_dict) and not force_reprocess:
         _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn)
 
-        if eigensolution:
+        if scenario_to_solve == "eigenproblem":
             bc_array, eigvals, eigvecs = load_eigensolution_files(files_dict)
         else:
             bc_array, solution = load_solution_files(files_dict)
 
     else:
-        if eigensolution:
+        if scenario_to_solve == "eigenproblem":
             bc_array, eigvals, eigvecs, nodes, elements = _compute_solution(
                 geometry_type,
                 params,
@@ -132,7 +159,10 @@ def retrieve_solution(
                 cst_model,
                 cons_loads_fcn,
                 materials,
-                eigensolution,
+                scenario_to_solve,
+                dt,
+                n_t_iter,
+                initial_state,
             )
         else:
             bc_array, solution, nodes, elements = _compute_solution(
@@ -142,10 +172,10 @@ def retrieve_solution(
                 cst_model,
                 cons_loads_fcn,
                 materials,
-                eigensolution,
+                scenario_to_solve,
             )
 
-    if eigensolution:
+    if scenario_to_solve == "eigenproblem":
         return bc_array, eigvals, eigvecs, nodes, elements
     else:
         return bc_array, solution, nodes, elements

@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 
 MESHES_FOLDER = "data/meshes"
 SOLUTIONS_FOLDER = "data/solutions"
@@ -37,3 +38,6 @@ abs_images_folder = os.path.join(current_dir, IMAGES_FOLDER)
 os.makedirs(abs_meshes_folder, exist_ok=True)
 os.makedirs(abs_solutions_folder, exist_ok=True)
 os.makedirs(abs_images_folder, exist_ok=True)
+
+# some custom types
+SOLUTION_TYPES = Literal["static", "eigenproblem", "time-marching"]

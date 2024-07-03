@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-from .constants import MESHES_FOLDER, SOLUTIONS_FOLDER
+from .constants import MESHES_FOLDER, SOLUTION_TYPES, SOLUTIONS_FOLDER
 
 
 def _parse_solution_identifier(
@@ -32,7 +32,7 @@ def generate_solution_filenames(
     geometry_type: str,
     cst_model: str,
     constraints_loads: str,
-    eigensolution: bool,
+    scenario_to_solve: SOLUTION_TYPES,
     params: dict,
     custom_str,
 ):
@@ -42,7 +42,14 @@ def generate_solution_filenames(
     )
     bc_array_file = f"{SOLUTIONS_FOLDER}/{solution_id}-bc_array.csv"
     mesh_file = f"{MESHES_FOLDER}/{solution_id}.msh"
-    if eigensolution:
+    if scenario_to_solve == "static":
+        solution_file = f"{SOLUTIONS_FOLDER}/{solution_id}-solution.csv"
+        return {
+            "bc_array": bc_array_file,
+            "solution": solution_file,
+            "mesh": mesh_file,
+        }
+    elif scenario_to_solve == "eigenproblem":
         eigvals_file = f"{SOLUTIONS_FOLDER}/{solution_id}-eigvals.csv"
         eigvecs_file = f"{SOLUTIONS_FOLDER}/{solution_id}-eigvecs.csv"
         return {
@@ -51,12 +58,11 @@ def generate_solution_filenames(
             "eigvecs": eigvecs_file,
             "mesh": mesh_file,
         }
-
-    else:
-        solution_file = f"{SOLUTIONS_FOLDER}/{solution_id}-solution.csv"
+    elif scenario_to_solve == "time-marching":
+        solution_file = f"{SOLUTIONS_FOLDER}/{solution_id}-time-solutions.csv"
         return {
             "bc_array": bc_array_file,
-            "solution": solution_file,
+            "time_solutions": solution_file,
             "mesh": mesh_file,
         }
 
@@ -83,7 +89,13 @@ def load_eigensolution_files(files_dict):
     return bc_array, eigvals, eigvecs
 
 
-def save_solution_files(bc_array, solution, files_dict):
+def save_static_solution_files(bc_array, solution, files_dict):
+    "Saves solution files"
+    np.savetxt(files_dict["bc_array"], bc_array, delimiter=",")
+    np.savetxt(files_dict["solution"], solution, delimiter=",")
+
+
+def save_dynamic_solution_files(bc_array, solution, files_dict):
     "Saves solution files"
     np.savetxt(files_dict["bc_array"], bc_array, delimiter=",")
     np.savetxt(files_dict["solution"], solution, delimiter=",")
