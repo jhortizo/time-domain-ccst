@@ -4,6 +4,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
+from continuum_mechanics.solids import c_cst
 from scipy.sparse.linalg import spsolve
 from solidspy.assemutil import assembler, loadasem
 from solidspy.postprocesor import complete_disp, plot_node_field
@@ -33,6 +34,14 @@ def manufactured_solution() -> sp.Matrix:
         [
             x * (1 - x) * y * (1 - y) * sp.sin(sp.pi * x) * sp.sin(sp.pi * y),
             x * (1 - x) * y * (1 - y) * sp.cos(sp.pi * x) * sp.cos(sp.pi * y),
+            0,
+        ]
+    )
+    # TODO: for some reason here the u.row_del(2) decided not to work, try and fix it
+    u_2d = sp.Matrix(
+        [
+            x * (1 - x) * y * (1 - y) * sp.sin(sp.pi * x) * sp.sin(sp.pi * y),
+            x * (1 - x) * y * (1 - y) * sp.cos(sp.pi * x) * sp.cos(sp.pi * y),
         ]
     )
 
@@ -40,11 +49,11 @@ def manufactured_solution() -> sp.Matrix:
     #     [sp.sin(sp.pi * x) * sp.sin(sp.pi * y), sp.sin(sp.pi * y) * sp.sin(sp.pi * x)]
     # )
 
-    u_lambdified = sp.lambdify((x, y), u, "numpy")
+    u_lambdified = sp.lambdify((x, y), u_2d, "numpy")
     return u, u_lambdified
 
 
-def calculate_body_force_fcn(u: sp.Matrix) -> sp.Matrix:
+def calculate_body_force_fcn_manually(u: sp.Matrix) -> sp.Matrix:
     lambda_ = E * nu / ((1 + nu) * (1 - 2 * nu))
     mu = E / (2 * (1 + nu))
     c1_squared = (lambda_ + 2 * mu) / rho
@@ -73,7 +82,43 @@ def calculate_body_force_fcn(u: sp.Matrix) -> sp.Matrix:
 
     f_lambdified = sp.lambdify((x, y), f, "numpy")
 
-    return f_lambdified
+    return f_lambdified, f
+
+
+def calculate_body_force_fcn_continuum_mechanics(u: sp.Matrix) -> sp.Matrix:
+    lambda_ = E * nu / ((1 + nu) * (1 - 2 * nu))
+    mu = E / (2 * (1 + nu))
+
+    ccst_operator = c_cst(u, (lambda_, mu, eta))
+
+    f = -ccst_operator.row_del(2)
+    f_lambdified = sp.lambdify((x, y), f, "numpy")
+
+    return f_lambdified, f
+
+
+def check_manual_vs_continuum_mechanics(
+    f_m: sp.Matrix, f_cm: sp.Matrix, body_force_fcn_manual, body_force_fcn_cm
+) -> None:
+    # symbolic comparison
+    difference = sp.simplify(f_m - f_cm)  # the expressions are in the e-15 order
+    print(difference)
+
+    # numerical comparison
+    nx, ny = (3, 2)
+    x = np.linspace(0, 1, nx)
+    y = np.linspace(0, 1, ny)
+    xv, yv = np.meshgrid(x, y)
+
+    val_cm = body_force_fcn_cm(xv, yv)
+    val_m = body_force_fcn_manual(xv, yv)
+    comp_difference = val_m - val_cm
+
+    plt.contourf(xv, yv, comp_difference[0, 0, :, :])
+    plt.colorbar()
+
+    max_error = np.max(np.abs(comp_difference))
+    print("Max error:", max_error)
 
 
 def generate_load_mesh(mesh_size: float, mesh_file: str):
@@ -151,10 +196,17 @@ def solve_manufactured_solution(
 
 def main():
     u, u_fnc = manufactured_solution()
-    body_force_fcn = calculate_body_force_fcn(u)
+
+    # just use the one calculated by continuum mechanics library as the reference
+    body_force_fcn, f_cm = calculate_body_force_fcn_continuum_mechanics(u)
+
+    # uncomment this to compare the manual vs the continuum mechanics library
+    # body_force_fcn_manual, f_m = calculate_body_force_fcn_manually(u)
+    # check_manual_vs_continuum_mechanics(f_m, f_cm, body_force_fcn_manual, body_force_fcn)
+
 
     mesh_sizes = np.logspace(np.log10(1), np.log10(1e-2), num=5)
-    mesh_sizes = mesh_sizes[:-1]
+    mesh_sizes = mesh_sizes[:-1] # manually removing the last one
 
     rmses = []
     max_errors = []
@@ -166,6 +218,7 @@ def main():
         print("Mesh size:", len(elements), " elements")
 
         u_fem = complete_disp(bc_array, nodes, solution, ndof_node=2)
+        # some other dev code to check the loads
         # loads = complete_disp(bc_array, nodes, rhs, ndof_node=2)
         # plot_node_field(loads, nodes, elements, title=["loads_x", "loads_y "])
 
