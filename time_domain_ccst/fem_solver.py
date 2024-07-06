@@ -144,38 +144,26 @@ def retrieve_solution(
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
         _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn)
-
-        if scenario_to_solve == "eigenproblem":
-            bc_array, eigvals, eigvecs = load_eigensolution_files(files_dict)
-        else:
-            bc_array, solution = load_solution_files(files_dict)
+        file_loading_fcn = (
+            load_eigensolution_files
+            if scenario_to_solve == "eigenproblem"
+            else load_solution_files
+        )
+        solution_structures = file_loading_fcn(files_dict)
+        complete_response = (*solution_structures, nodes, elements)
 
     else:
-        if scenario_to_solve == "eigenproblem":
-            bc_array, eigvals, eigvecs, nodes, elements = _compute_solution(
-                geometry_type,
-                params,
-                files_dict,
-                cst_model,
-                cons_loads_fcn,
-                materials,
-                scenario_to_solve,
-                dt,
-                n_t_iter,
-                initial_state,
-            )
-        else:
-            bc_array, solution, nodes, elements = _compute_solution(
-                geometry_type,
-                params,
-                files_dict,
-                cst_model,
-                cons_loads_fcn,
-                materials,
-                scenario_to_solve,
-            )
+        complete_response = _compute_solution(
+            geometry_type,
+            params,
+            files_dict,
+            cst_model,
+            cons_loads_fcn,
+            materials,
+            scenario_to_solve,
+            dt,
+            n_t_iter,
+            initial_state,
+        )
 
-    if scenario_to_solve == "eigenproblem":
-        return bc_array, eigvals, eigvecs, nodes, elements
-    else:
-        return bc_array, solution, nodes, elements
+    return complete_response
