@@ -22,7 +22,6 @@ from .utils import (
     postprocess_eigsolution,
     save_solution_files,
     save_eigensolution_files,
-    save_dynamic_solution_files,
 )
 
 cst_model_functions = {
