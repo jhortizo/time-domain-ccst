@@ -18,12 +18,11 @@ from .gmesher import create_mesh
 from .utils import (
     check_solution_files_exists,
     generate_solution_filenames,
-    load_eigensolution_files,
-    load_solution_files,
+    load_solutions,
     postprocess_eigsolution,
-    save_dynamic_solution_files,
+    save_solution_files,
     save_eigensolution_files,
-    save_static_solution_files,
+    save_dynamic_solution_files,
 )
 
 cst_model_functions = {
@@ -93,7 +92,7 @@ def _compute_solution(
         # for freq. solution, do spsolve(stiff_mat - omega**2 * mass_mat, rhs)
         rhs = loadasem(loads, bc_array, neq)
         solution = spsolve(stiff_mat, rhs)
-        save_static_solution_files(bc_array, solution, files_dict)
+        save_solution_files(bc_array, solution, files_dict)
         return bc_array, solution, nodes, elements
 
     elif scenario_to_solve == "eigenproblem":
@@ -104,18 +103,18 @@ def _compute_solution(
 
     elif scenario_to_solve == "time-marching":
         rhs = loadasem(loads, bc_array, neq)
-        solutions = np.zeros((n_t_iters, neq))
-        solutions[0] = initial_state  # assume constant behavior in first steps
-        solutions[1] = initial_state
+        solutions = np.zeros((neq, n_t_iters))
+        solutions[:, 0] = initial_state  # assume constant behavior in first steps
+        solutions[:, 1] = initial_state
         for i in range(1, n_t_iters - 1):
             b = (
                 dt**2 * rhs
-                + 2 * mass_mat @ solutions[i]
-                - mass_mat @ solutions[i - 1]
-                - dt**2 * stiff_mat @ solutions[i]
+                + 2 * mass_mat @ solutions[:, i]
+                - mass_mat @ solutions[:, i - 1]
+                - dt**2 * stiff_mat @ solutions[:, i]
             )
-            solutions[i + 1] = spsolve(mass_mat, b)
-        save_dynamic_solution_files(bc_array, solutions, files_dict)
+            solutions[:, i + 1] = spsolve(mass_mat, b)
+        save_solution_files(bc_array, solutions, files_dict)
         return bc_array, solutions, nodes, elements
 
 
@@ -144,12 +143,7 @@ def retrieve_solution(
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
         _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn)
-        file_loading_fcn = (
-            load_eigensolution_files
-            if scenario_to_solve == "eigenproblem"
-            else load_solution_files
-        )
-        solution_structures = file_loading_fcn(files_dict)
+        solution_structures = load_solutions(files_dict, scenario_to_solve)
         complete_response = (*solution_structures, nodes, elements)
 
     else:
