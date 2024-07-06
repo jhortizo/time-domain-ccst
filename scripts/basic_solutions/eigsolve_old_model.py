@@ -1,7 +1,7 @@
 import numpy as np
 
 from time_domain_ccst.fem_solver import retrieve_solution
-from time_domain_ccst.plotter import plot_fields
+from time_domain_ccst.plotter import plot_fields_quad9
 
 
 def main():
@@ -35,7 +35,7 @@ def main():
     )
 
     n_eigvec = 0
-    plot_fields(bc_array, nodes, elements, eigvecs[:, n_eigvec])
+    plot_fields_quad9(bc_array, nodes, elements, eigvecs[:, n_eigvec])
 
 
 if __name__ == "__main__":
