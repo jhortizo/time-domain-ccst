@@ -13,7 +13,7 @@ warnings.filterwarnings(
 )  # ignore unimportant warning from solidspy
 
 
-def plot_fields(bc_array, nodes, elements, solution):
+def plot_fields_quad9(bc_array, nodes, elements, solution):
     sol_displacement = pos.complete_disp(bc_array, nodes, solution, ndof_node=3)
     pos.plot_node_field(
         sol_displacement[:, 0], nodes, elements, title="X"
@@ -25,6 +25,20 @@ def plot_fields(bc_array, nodes, elements, solution):
         sol_displacement[:, 2], nodes, elements, title="w"
     )  # y component
     plt.show()
+
+
+def plot_fields_classical(
+    bc_array, nodes, elements, solution, instant_show: bool = True
+):
+    sol_displacement = pos.complete_disp(bc_array, nodes, solution, ndof_node=2)
+    pos.plot_node_field(
+        sol_displacement[:, 0], nodes, elements, title="X"
+    )  # x component
+    pos.plot_node_field(
+        sol_displacement[:, 1], nodes, elements, title="Y"
+    )  # y component
+    if instant_show:
+        plt.show()
 
 
 def plot_fields_quad9_rot4(
