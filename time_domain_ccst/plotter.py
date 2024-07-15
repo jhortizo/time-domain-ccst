@@ -3,10 +3,12 @@ Contains all the functions to do pretty plots
 """
 
 import warnings
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import solidspy.postprocesor as pos
+from matplotlib.animation import FuncAnimation
 
 warnings.filterwarnings(
     "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
@@ -76,3 +78,67 @@ def plot_fields_quad9_rot4(
     plt.title("W")
     if instant_show:
         plt.show()
+
+
+def plot_oscillatory_movement_singleplot(
+    x: np.array,
+    t: np.array,
+    Y: np.array,
+    n_plots: int,
+    xlabel: str = "",
+    ylabel: str = "",
+    title: str = "",
+    savepath: Optional[str] = None,
+    instant_show: bool = False,
+    colormap: str = "viridis",
+) -> None:
+    """This requires Y to be of shape (timeframe, values)"""
+    time_steps = np.linspace(0, len(t) - 1, n_plots, dtype=int)
+
+    fig, ax = plt.subplots()
+    for i in time_steps:
+        ax.plot(x, Y[i, :], c=plt.cm.get_cmap(colormap)(i / len(t)))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    # Create a colorbar
+    norm = plt.Normalize(vmin=0, vmax=t.max())
+    sm = plt.cm.ScalarMappable(cmap=plt.cm.get_cmap(colormap), norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax)
+    cbar.set_label("Time")
+
+    if savepath:
+        plt.savefig(savepath, dpi=300)
+
+    if instant_show:
+        plt.show()
+
+
+def plot_oscillatory_movement(
+    x: np.ndarray,
+    t: np.ndarray,
+    Y: np.ndarray,
+    savepath: Optional[str] = None,
+    fps: int = 1,
+    xlabel: str = "",
+    ylabel: str = "",
+    title: str = "",
+) -> None:
+    """This requires Y to be of shape (timeframe, values)"""
+    fig, ax = plt.subplots()
+    (line,) = ax.plot(x, Y[0], "k.", markersize=3)
+    time_text = ax.text(0.02, 0.95, "", transform=ax.transAxes)
+
+    def update(frame):
+        line.set_ydata(Y[frame, :])
+        time_text.set_text(f"Time: {t[frame]:.2f}")
+        return line, time_text
+
+    ani = FuncAnimation(fig, update, frames=len(t), blit=True, interval=50)
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    ani.save(savepath, fps=fps)
