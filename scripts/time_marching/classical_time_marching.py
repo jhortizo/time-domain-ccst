@@ -7,7 +7,7 @@ import numpy as np
 from solidspy.postprocesor import complete_disp
 
 from time_domain_ccst.fem_solver import retrieve_solution
-from time_domain_ccst.plotter import plot_oscillatory_movement
+from time_domain_ccst.plotter import plot_oscillatory_movement, plot_oscillatory_movement_singleplot
 from time_domain_ccst.constants import IMAGES_FOLDER
 
 
@@ -68,7 +68,7 @@ def main():
 
     initial_state = eigvecs[:, n_eigvec]
     scenario_to_solve = "time-marching"
-    n_t_iter = 50
+    n_t_iter = 10000
     dt = 0.1
     bc_array, solutions, nodes, elements = retrieve_solution(
         geometry_type,
@@ -91,8 +91,19 @@ def main():
         x_values,
         ts,
         Y_values,
-        fps=2,
-        savepath=IMAGES_FOLDER + "/classical_fixed_cantilever_mode0.gif",
+        n_plots = 200,
+        fps=10,
+        savepath=IMAGES_FOLDER + "/classical_fixed_cantilever_mode0_implicit.gif",
+    )
+
+    plot_oscillatory_movement_singleplot(
+        x_values,
+        ts,
+        Y_values,
+        xlabel="x",
+        ylabel="y",
+        title="Displacement of the bottom line",
+        savepath=IMAGES_FOLDER + "/classical_fixed_cantilever_mode0_implicit.png",
     )
 
 

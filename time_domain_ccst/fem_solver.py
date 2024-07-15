@@ -106,13 +106,13 @@ def _compute_solution(
         solutions[:, 0] = initial_state  # assume constant behavior in first steps
         solutions[:, 1] = initial_state
         for i in range(1, n_t_iters - 1):
+            A = mass_mat + dt**2 * stiff_mat
             b = (
                 dt**2 * rhs
                 + 2 * mass_mat @ solutions[:, i]
                 - mass_mat @ solutions[:, i - 1]
-                - dt**2 * stiff_mat @ solutions[:, i]
             )
-            solutions[:, i + 1] = spsolve(mass_mat, b)
+            solutions[:, i + 1] = spsolve(A, b)
         save_solution_files(bc_array, solutions, files_dict)
         return bc_array, solutions, nodes, elements
 
