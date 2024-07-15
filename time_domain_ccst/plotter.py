@@ -84,7 +84,7 @@ def plot_oscillatory_movement_singleplot(
     x: np.array,
     t: np.array,
     Y: np.array,
-    n_plots: int,
+    n_plots: int | None = None,
     xlabel: str = "",
     ylabel: str = "",
     title: str = "",
@@ -93,6 +93,8 @@ def plot_oscillatory_movement_singleplot(
     colormap: str = "viridis",
 ) -> None:
     """This requires Y to be of shape (timeframe, values)"""
+    if n_plots is None:
+        n_plots = len(t)
     time_steps = np.linspace(0, len(t) - 1, n_plots, dtype=int)
 
     fig, ax = plt.subplots()
@@ -120,6 +122,7 @@ def plot_oscillatory_movement(
     x: np.ndarray,
     t: np.ndarray,
     Y: np.ndarray,
+    n_plots: int | None = None,
     savepath: Optional[str] = None,
     fps: int = 1,
     xlabel: str = "",
@@ -127,16 +130,28 @@ def plot_oscillatory_movement(
     title: str = "",
 ) -> None:
     """This requires Y to be of shape (timeframe, values)"""
+    if n_plots is None:
+        n_plots = len(t)
+
+    time_steps = np.linspace(0, len(t) - 1, n_plots, dtype=int)
+
     fig, ax = plt.subplots()
-    (line,) = ax.plot(x, Y[0], "k.", markersize=3)
+    (line,) = ax.plot(x, Y[time_steps[0]], "k.", markersize=3)
+
+    # be careful, if the norm explodes this will be a problem
+    y_range = Y.max() - Y.min()
+    y_padding = 0.1 * y_range  # 10% padding
+    ax.set_xlim(x.min(), x.max())
+    ax.set_ylim(Y.min() - y_padding, Y.max() + y_padding)
+
     time_text = ax.text(0.02, 0.95, "", transform=ax.transAxes)
 
     def update(frame):
-        line.set_ydata(Y[frame, :])
-        time_text.set_text(f"Time: {t[frame]:.2f}")
+        line.set_ydata(Y[time_steps[frame], :])
+        time_text.set_text(f"Time: {t[time_steps[frame]]:.2f}")
         return line, time_text
 
-    ani = FuncAnimation(fig, update, frames=len(t), blit=True, interval=50)
+    ani = FuncAnimation(fig, update, frames=len(time_steps), blit=True, interval=50)
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
