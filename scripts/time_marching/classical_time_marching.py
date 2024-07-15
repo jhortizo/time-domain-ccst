@@ -3,16 +3,15 @@ Time-marching scheme is proposed for classical continuum mechanics, taking as
 initial state an eigenvector of the system, and without loads.
 """
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.animation import FuncAnimation
 from solidspy.postprocesor import complete_disp
 
 from time_domain_ccst.fem_solver import retrieve_solution
-from time_domain_ccst.plotter import plot_fields_classical
+from time_domain_ccst.plotter import plot_oscillatory_movement
+from time_domain_ccst.constants import IMAGES_FOLDER
 
 
-def animate_bottom_line(bc_array, nodes, solutions, n_iter_t):
+def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
     # get the indices of the bottom line nodes
     lower_border_ids = np.where(nodes[:, 2] == 0)[0]
 
@@ -26,21 +25,9 @@ def animate_bottom_line(bc_array, nodes, solutions, n_iter_t):
     # get the displacement solution for the bottom line nodes
     lower_border_y_displacement = solution_displacements[lower_border_ids, 1, :]
 
-    # do initial plotting, just the x values of the nodes vs the y displacement
-    fig, ax = plt.subplots()
-    lower_border_plot = ax.plot(
-        nodes[lower_border_ids, 1], lower_border_y_displacement[:, 0], 'k.'
-    )[0]
-
-    def update_plot(i):
-        lower_border_plot.set_ydata(lower_border_y_displacement[:, i])
-        return lower_border_plot, 
-
-    # use the function to create the animation plot
-    lower_border_animation = FuncAnimation(fig, update_plot, frames=range(n_iter_t), blit=True, interval=1000)
-    lower_border_animation.save("lower_border_animation.gif", writer="pillow")
-    
-
+    x_values = nodes[lower_border_ids, 1]
+    Y_values = lower_border_y_displacement
+    return x_values, Y_values.transpose()
 
 def main():
     geometry_type = "rectangle"
@@ -80,8 +67,8 @@ def main():
 
     initial_state = eigvecs[:, n_eigvec]
     scenario_to_solve = "time-marching"
-    n_t_iter = 1000
-    dt = 0.01
+    n_t_iter = 50
+    dt = 0.1
     bc_array, solutions, nodes, elements = retrieve_solution(
         geometry_type,
         params,
@@ -95,11 +82,9 @@ def main():
         initial_state=initial_state,
     )
 
-    # for i in range(10):
-    #     plot_fields_classical(bc_array, nodes, elements, solutions[:, i])
-    # plt.show()
-
-    animate_bottom_line(bc_array, nodes, solutions, n_t_iter)
+    x_values, Y_values = prepare_animation_structure(bc_array, nodes, solutions, n_t_iter)
+    ts = np.linspace(0, n_t_iter * dt, n_t_iter)
+    plot_oscillatory_movement(x_values, ts, Y_values, fps=2, savepath=IMAGES_FOLDER + '/classical_fixed_cantilever_mode0.gif')
 
 
 if __name__ == "__main__":
