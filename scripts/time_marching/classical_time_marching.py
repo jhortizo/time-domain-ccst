@@ -29,6 +29,7 @@ def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
     Y_values = lower_border_y_displacement
     return x_values, Y_values.transpose()
 
+
 def main():
     geometry_type = "rectangle"
     params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
@@ -82,9 +83,17 @@ def main():
         initial_state=initial_state,
     )
 
-    x_values, Y_values = prepare_animation_structure(bc_array, nodes, solutions, n_t_iter)
+    x_values, Y_values = prepare_animation_structure(
+        bc_array, nodes, solutions, n_t_iter
+    )
     ts = np.linspace(0, n_t_iter * dt, n_t_iter)
-    plot_oscillatory_movement(x_values, ts, Y_values, fps=2, savepath=IMAGES_FOLDER + '/classical_fixed_cantilever_mode0.gif')
+    plot_oscillatory_movement(
+        x_values,
+        ts,
+        Y_values,
+        fps=2,
+        savepath=IMAGES_FOLDER + "/classical_fixed_cantilever_mode0.gif",
+    )
 
 
 if __name__ == "__main__":
