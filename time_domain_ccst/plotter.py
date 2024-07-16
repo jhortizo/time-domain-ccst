@@ -99,7 +99,7 @@ def plot_oscillatory_movement_singleplot(
 
     fig, ax = plt.subplots()
     for i in time_steps:
-        ax.plot(x, Y[i, :], c=plt.cm.get_cmap(colormap)(i / len(t)))
+        ax.scatter(x, Y[i, :], c=plt.cm.get_cmap(colormap)(i / len(t)), marker=".", s=3)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)

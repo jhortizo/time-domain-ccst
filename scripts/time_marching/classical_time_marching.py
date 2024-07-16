@@ -98,8 +98,9 @@ def main():
 
     plot_oscillatory_movement_singleplot(
         x_values,
-        ts,
-        Y_values,
+        ts[:2000],
+        Y_values[:2000, :],
+        n_plots=20,
         xlabel="x",
         ylabel="y",
         title="Displacement of the bottom line",
