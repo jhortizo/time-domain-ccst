@@ -122,6 +122,23 @@ traitlets = ">=4"
 test = ["pytest"]
 
 [[package]]
+name = "continuum-mechanics"
+version = "0.2.2"
+description = "Utilities for doing calculations in continuum mechanics."
+optional = false
+python-versions = "*"
+files = [
+    {file = "continuum_mechanics-0.2.2-py2.py3-none-any.whl", hash = "sha256:ab20f3d7a68b3af4d7a12a9db2e70cdb76e156b7f4cde806b655f29ec9836560"},
+    {file = "continuum_mechanics-0.2.2.tar.gz", hash = "sha256:67e888bd2ee37014ff900a70c516fd3dd1f42806f4b0f405818f4004cc30756f"},
+]
+
+[package.dependencies]
+matplotlib = ">=3"
+numpy = "*"
+scipy = "*"
+sympy = ">=1.3"
+
+[[package]]
 name = "contourpy"
 version = "1.2.1"
 description = "Python library for calculating contours of 2D quadrilateral grids"
@@ -1432,4 +1449,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a5ee36e99b54d785c1a6f6bd3f14459c38c6ece5a0259571b2d9b54965e3d1b9"
+content-hash = "b36126094348634c1197b171bbb37ffe8d2c16fd85dba328a5d48f3758fcc40c"
