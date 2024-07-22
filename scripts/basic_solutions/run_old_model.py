@@ -1,7 +1,7 @@
 import numpy as np
 
 from time_domain_ccst.fem_solver import retrieve_solution
-from time_domain_ccst.plotter import plot_fields
+from time_domain_ccst.plotter import plot_fields_quad9
 
 
 def main():
@@ -28,10 +28,11 @@ def main():
         cst_model,
         constraints_loads,
         materials,
+        scenario_to_solve='static',
         force_reprocess=force_reprocess,
     )
 
-    plot_fields(bc_array, nodes, elements, solution)
+    plot_fields_quad9(bc_array, nodes, elements, solution)
 
 
 if __name__ == "__main__":

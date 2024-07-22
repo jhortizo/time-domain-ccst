@@ -9,7 +9,7 @@ import warnings
 
 import numpy as np
 from run_new_model import plot_fields_quad9_rot4
-from run_old_model import plot_fields as plot_fields_quad9
+from run_old_model import plot_fields_quad9 as plot_fields_quad9
 from scipy.sparse.linalg import spsolve
 from solidspy.assemutil import assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9
