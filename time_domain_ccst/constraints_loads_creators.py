@@ -89,6 +89,40 @@ def cantilever_support_load(line3, cell_data, npts):
     return cons, loads
 
 
+def cantilever_support(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+    """
+
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[list(left_border), 0:2] = -1
+
+    loads = np.zeros((npts, 4))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    return cons, loads
+
+
+def cantilever_support_classical(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+
+    Classical refers to only add 2 dofs per node, instead of 3.
+    """
+
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+
+    cons = np.zeros((npts, 2), dtype=int)
+    cons[list(left_border), :] = -1
+
+    loads = np.zeros((npts, 3))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    return cons, loads
+
+
 def plate_hole_rollers_load(line3, cell_data, npts):
     """
     TODO: properly describe this, maybe add some figures to illustrate...
@@ -139,6 +173,8 @@ SYSTEMS = {
     "borders_fixed": borders_fixed,
     "quarter_ring_rollers_axial_load": quarter_ring_rollers_axial_load,
     "cantilever_support_load": cantilever_support_load,
+    "cantilever_support": cantilever_support,
+    "cantilever_support_classical": cantilever_support_classical,
     "plate_hole_rollers_load": plate_hole_rollers_load,
     "circle_borders_fixed": circle_borders_fixed,
     "floating": no_constraints_no_loads,
