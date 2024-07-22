@@ -62,7 +62,7 @@ def main():
             cst_model,
             constraints_loads,
             materials,
-            scenario_to_solve='static',
+            scenario_to_solve="static",
             force_reprocess=force_reprocess,
             custom_str=custom_str,
         )

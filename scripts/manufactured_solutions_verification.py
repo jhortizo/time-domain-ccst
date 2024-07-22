@@ -204,9 +204,8 @@ def main():
     # body_force_fcn_manual, f_m = calculate_body_force_fcn_manually(u)
     # check_manual_vs_continuum_mechanics(f_m, f_cm, body_force_fcn_manual, body_force_fcn)
 
-
     mesh_sizes = np.logspace(np.log10(1), np.log10(1e-2), num=5)
-    mesh_sizes = mesh_sizes[:-1] # manually removing the last one
+    mesh_sizes = mesh_sizes[:-1]  # manually removing the last one
 
     rmses = []
     max_errors = []

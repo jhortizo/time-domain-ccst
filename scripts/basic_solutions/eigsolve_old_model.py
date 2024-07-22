@@ -30,7 +30,7 @@ def main():
         cst_model,
         constraints_loads,
         materials,
-        scenario_to_solve='eigenproblem',
+        scenario_to_solve="eigenproblem",
         force_reprocess=force_reprocess,
     )
 

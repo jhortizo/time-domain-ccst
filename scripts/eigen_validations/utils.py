@@ -30,7 +30,7 @@ def check_eigenvals_convergence(
             cst_model,
             constraints_loads,
             materials,
-            scenario_to_solve='eigenproblem',
+            scenario_to_solve="eigenproblem",
             force_reprocess=force_reprocess,
         )
         print("Number of elements", len(elements))

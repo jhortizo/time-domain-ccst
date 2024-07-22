@@ -35,7 +35,6 @@ def main():
     force_reprocess = False
     cst_model = "cst_quad9_rot4"
     constraints_loads = "cantilever_support_load"
-    eigsolution = True
 
     E = 1
     nu = 0
@@ -62,7 +61,7 @@ def main():
             cst_model,
             constraints_loads,
             materials,
-            scenario_to_solve='eigenproblem',
+            scenario_to_solve="eigenproblem",
             force_reprocess=force_reprocess,
             custom_str=custom_str,
         )

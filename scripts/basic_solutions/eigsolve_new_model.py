@@ -22,15 +22,13 @@ def main():
         ]
     )
 
-    eigsolution = True
-
     bc_array, eigvals, eigvecs, nodes, elements = retrieve_solution(
         geometry_type,
         params,
         cst_model,
         constraints_loads,
         materials,
-        scenario_to_solve='eigenproblem',
+        scenario_to_solve="eigenproblem",
         force_reprocess=force_reprocess,
     )
 

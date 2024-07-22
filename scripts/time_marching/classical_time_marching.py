@@ -7,7 +7,10 @@ import numpy as np
 from solidspy.postprocesor import complete_disp
 
 from time_domain_ccst.fem_solver import retrieve_solution
-from time_domain_ccst.plotter import plot_oscillatory_movement, plot_oscillatory_movement_singleplot
+from time_domain_ccst.plotter import (
+    plot_oscillatory_movement,
+    plot_oscillatory_movement_singleplot,
+)
 from time_domain_ccst.constants import IMAGES_FOLDER
 
 
@@ -91,7 +94,7 @@ def main():
         x_values,
         ts,
         Y_values,
-        n_plots = 200,
+        n_plots=200,
         fps=10,
         savepath=IMAGES_FOLDER + "/classical_fixed_cantilever_mode0_implicit.gif",
     )
