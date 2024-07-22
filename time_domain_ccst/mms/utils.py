@@ -7,8 +7,6 @@ import sympy as sp
 from continuum_mechanics.solids import c_cst
 from scipy.sparse.linalg import spsolve
 from solidspy.assemutil import assembler, loadasem
-from solidspy.postprocesor import complete_disp, plot_node_field
-from tqdm import tqdm
 
 from time_domain_ccst.constants import MESHES_FOLDER, SOLUTIONS_FOLDER
 from time_domain_ccst.constraints_loads_creators import borders_fixed
@@ -151,6 +149,7 @@ def solve_manufactured_solution(
     mesh_file = f"{MESHES_FOLDER}/{solution_identifier}.msh"
     solution_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-solution.csv"
     bc_array_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-bc_array.csv"
+    rhs_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-rhs.csv"
 
     files_list = [mesh_file, solution_file, bc_array_file]
 
@@ -184,84 +183,13 @@ def solve_manufactured_solution(
 
         np.savetxt(solution_file, solution, delimiter=",")
         np.savetxt(bc_array_file, bc_array, delimiter=",")
+        np.savetxt(rhs_file, rhs, delimiter=",")
 
     else:
         bc_array = np.loadtxt(bc_array_file, delimiter=",").astype(np.int64)
         bc_array = bc_array.reshape(-1, 1) if bc_array.ndim == 1 else bc_array
         solution = np.loadtxt(solution_file, delimiter=",")
+        rhs = np.loadtxt(rhs_file, delimiter=",")
         cons, elements, nodes, loads = generate_load_mesh(mesh_size, mesh_file)
 
-    return bc_array, solution, nodes, elements
-
-
-def main():
-    u, u_fnc = manufactured_solution()
-
-    # just use the one calculated by continuum mechanics library as the reference
-    body_force_fcn, f_cm = calculate_body_force_fcn_continuum_mechanics(u)
-
-    # uncomment this to compare the manual vs the continuum mechanics library
-    # body_force_fcn_manual, f_m = calculate_body_force_fcn_manually(u)
-    # check_manual_vs_continuum_mechanics(f_m, f_cm, body_force_fcn_manual, body_force_fcn)
-
-    mesh_sizes = np.logspace(np.log10(1), np.log10(1e-2), num=5)
-    mesh_sizes = mesh_sizes[:-1]  # manually removing the last one
-
-    rmses = []
-    max_errors = []
-    n_elements = []
-    for mesh_size in tqdm(mesh_sizes, desc="Mesh sizes"):
-        bc_array, solution, nodes, elements = solve_manufactured_solution(
-            mesh_size, body_force_fcn, force_reprocess=True
-        )
-        print("Mesh size:", len(elements), " elements")
-
-        u_fem = complete_disp(bc_array, nodes, solution, ndof_node=2)
-        # some other dev code to check the loads
-        # loads = complete_disp(bc_array, nodes, rhs, ndof_node=2)
-        # plot_node_field(loads, nodes, elements, title=["loads_x", "loads_y "])
-
-        # correctly reorder array from (2, 1, nnodes) to (nnodes, 2)
-        u_true = u_fnc(nodes[:, 1], nodes[:, 2])
-        u_true = np.squeeze(u_true)
-        u_true = np.swapaxes(u_true, 0, 1)
-
-        if mesh_size == mesh_sizes[-1]:
-            plot_node_field(
-                u_fem[:, 0],
-                nodes,
-                elements,
-                title=[
-                    f"u_x FEM_{len(elements)}_elements",
-                ],
-            )
-            plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
-
-        rmse = np.sqrt(np.mean((u_true - u_fem) ** 2))
-        max_error = np.max(np.abs(u_true - u_fem))
-
-        n_elements.append(len(elements))
-        rmses.append(rmse)
-        max_errors.append(max_error)
-
-    log_mesh = np.log10(mesh_sizes)
-    log_rmse = np.log10(rmses)
-
-    slope = np.polyfit(log_mesh, log_rmse, 1)[0]
-
-    # and then plot the results
-    plt.figure()
-    plt.loglog(mesh_sizes, rmses, label="RMSE")
-    # plt.loglog(n_elements, max_errors, label="Max Error")
-    plt.xlabel("Mesh length")
-    plt.ylabel("Error")
-    plt.grid()
-    plt.legend()
-
-    plt.show()
-
-    print("Slope:", slope)
-
-
-if __name__ == "__main__":
-    main()
+    return bc_array, solution, nodes, elements, rhs
