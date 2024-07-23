@@ -27,30 +27,6 @@ eta = 1
 omega = 1
 
 
-def manufactured_solution() -> sp.Matrix:
-    u = sp.Matrix(
-        [
-            x * (1 - x) * y * (1 - y) * sp.sin(sp.pi * x) * sp.sin(sp.pi * y),
-            x * (1 - x) * y * (1 - y) * sp.cos(sp.pi * x) * sp.cos(sp.pi * y),
-            0,
-        ]
-    )
-    # TODO: for some reason here the u.row_del(2) decided not to work, try and fix it
-    u_2d = sp.Matrix(
-        [
-            x * (1 - x) * y * (1 - y) * sp.sin(sp.pi * x) * sp.sin(sp.pi * y),
-            x * (1 - x) * y * (1 - y) * sp.cos(sp.pi * x) * sp.cos(sp.pi * y),
-        ]
-    )
-
-    # u = sp.Matrix(
-    #     [sp.sin(sp.pi * x) * sp.sin(sp.pi * y), sp.sin(sp.pi * y) * sp.sin(sp.pi * x)]
-    # )
-
-    u_lambdified = sp.lambdify((x, y), u_2d, "numpy")
-    return u, u_lambdified
-
-
 def calculate_body_force_fcn_manually(u: sp.Matrix) -> sp.Matrix:
     lambda_ = E * nu / ((1 + nu) * (1 - 2 * nu))
     mu = E / (2 * (1 + nu))

@@ -11,9 +11,9 @@ from time_domain_ccst.mms.plots import (
 )
 from time_domain_ccst.mms.utils import (
     calculate_body_force_fcn_continuum_mechanics,
-    manufactured_solution,
     solve_manufactured_solution,
 )
+from time_domain_ccst.mms.proposed_solutions import manufactured_solution_1
 
 warnings.filterwarnings(
     "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
@@ -24,7 +24,7 @@ def run_mms():
     plot_loads = "all"
     plot_field = "last"
 
-    u, u_fnc = manufactured_solution()
+    u, u_fnc = manufactured_solution_1()
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
