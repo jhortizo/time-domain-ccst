@@ -3,6 +3,7 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import numpy as np
 from solidspy.postprocesor import complete_disp, plot_node_field
+from time_domain_ccst.constants import IMAGES_FOLDER
 
 
 def conditional_loads_plotting(
@@ -59,6 +60,7 @@ def conditional_fields_plotting(
 def convergence_plot(
     mesh_sizes,
     rmses,
+    filename: str = None,
 ):
     log_mesh = np.log10(mesh_sizes)
     log_rmse = np.log10(rmses)
@@ -74,6 +76,9 @@ def convergence_plot(
     plt.grid()
     plt.legend()
 
+    plt.text(0.5, 0.9, f"Slope: {round(slope,2)}", transform=plt.gca().transAxes)
+    if filename:
+        plt.savefig(f'{IMAGES_FOLDER}/{filename}', dpi=300)
     plt.show()
 
     print("Slope:", slope)

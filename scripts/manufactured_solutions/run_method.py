@@ -13,7 +13,7 @@ from time_domain_ccst.mms.utils import (
     calculate_body_force_fcn_continuum_mechanics,
     solve_manufactured_solution,
 )
-from time_domain_ccst.mms.proposed_solutions import manufactured_solution_1
+from time_domain_ccst.mms.proposed_solutions import manufactured_solution_2
 
 warnings.filterwarnings(
     "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
@@ -21,22 +21,22 @@ warnings.filterwarnings(
 
 
 def run_mms():
-    plot_loads = "all"
+    plot_loads = "none"
     plot_field = "last"
+    force_reprocess = False
 
-    u, u_fnc = manufactured_solution_1()
+    u, u_fnc = manufactured_solution_2()
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
     mesh_sizes = np.logspace(np.log10(1), np.log10(1e-2), num=5)
-    mesh_sizes = mesh_sizes[:-1]  # manually removing the last one
 
     rmses = []
     max_errors = []
     n_elements = []
     for mesh_size in tqdm(mesh_sizes, desc="Mesh sizes"):
         bc_array, solution, nodes, elements, rhs = solve_manufactured_solution(
-            mesh_size, body_force_fcn, force_reprocess=True
+            mesh_size, body_force_fcn, force_reprocess=force_reprocess
         )
         print("Mesh size:", len(elements), " elements")
 
@@ -63,4 +63,8 @@ def run_mms():
         rmses.append(rmse)
         max_errors.append(max_error)
 
-    convergence_plot(rmses, max_errors, n_elements)
+    convergence_plot(mesh_sizes, rmses, filename="mms_convergence.png")
+
+
+if __name__ == "__main__":
+    run_mms()
