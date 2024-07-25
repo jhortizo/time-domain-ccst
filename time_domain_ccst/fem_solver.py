@@ -13,15 +13,20 @@ from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9, elast_quad9
 
 from .constants import SOLUTION_TYPES
 from .constraints_loads_creators import SYSTEMS
-from .cst_utils import assem_op_cst_quad9_rot4, cst_quad9_rot4
+from .cst_utils import (
+    assem_op_cst_quad9_rot4,
+    cst_quad9_rot4,
+    decouple_global_matrices,
+    get_variables_eqs,
+)
 from .gmesher import create_mesh
 from .utils import (
     check_solution_files_exists,
     generate_solution_filenames,
     load_solutions,
     postprocess_eigsolution,
-    save_solution_files,
     save_eigensolution_files,
+    save_solution_files,
 )
 
 cst_model_functions = {
@@ -105,14 +110,22 @@ def _compute_solution(
         solutions = np.zeros((neq, n_t_iters))
         solutions[:, 0] = initial_state  # assume constant behavior in first steps
         solutions[:, 1] = initial_state
-        for i in range(1, n_t_iters - 1):
-            A = mass_mat + dt**2 * stiff_mat
-            b = (
-                dt**2 * rhs
-                + 2 * mass_mat @ solutions[:, i]
-                - mass_mat @ solutions[:, i - 1]
+        if cst_model == "classical_quad9":
+            for i in range(1, n_t_iters - 1):
+                A = mass_mat + dt**2 * stiff_mat
+                b = (
+                    dt**2 * rhs
+                    + 2 * mass_mat @ solutions[:, i]
+                    - mass_mat @ solutions[:, i - 1]
+                )
+                solutions[:, i + 1] = spsolve(A, b)
+        elif cst_model == "cst_quad9_rot4":
+            eqs_u, eqs_w, eqs_s = get_variables_eqs(assem_op)
+            m_uu, k_uu, k_ww, k_us, k_ws, f_u, f_w = decouple_global_matrices(
+                mass_mat, stiff_mat, rhs, eqs_u, eqs_w, eqs_s
             )
-            solutions[:, i + 1] = spsolve(A, b)
+            for i in range(1, n_t_iters - 1):
+                pass  # here comes the time marching scheme
         save_solution_files(bc_array, solutions, files_dict)
         return bc_array, solutions, nodes, elements
 

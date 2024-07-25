@@ -245,3 +245,31 @@ def cst_quad9_rot4(coord, params):
     stiff_mat = stiff_mat[:, order]
     mass_mat = mass_mat[:, order]
     return stiff_mat[order, :], mass_mat[order, :]
+
+
+def get_variables_eqs(assem_op):
+    """Get the equations for each variable
+
+    Parameters
+    ----------
+    assem_op : ndarray (int)
+      Assembly operator.
+
+    Returns
+    -------
+    eqs_u : ndarray (int)
+      Equations for the displacement field.
+    eqs_w : ndarray (int)
+      Equations for the rotation field.
+    eqs_s : ndarray (int)
+      Equations for the skew-symmetric part of the force-stress tensor.
+
+    """
+
+    pass
+
+
+def decouple_global_matrices(mass_mat, stiff_mat, rhs, eqs_u, eqs_w, eqs_s):
+    """Decouple the global matrices"""
+    pass
+    # return m_uu, k_uu, k_ww, k_us, k_ws, f_u, f_w
