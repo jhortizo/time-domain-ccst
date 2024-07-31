@@ -142,7 +142,7 @@ def plot_oscillatory_movement(
     y_range = Y.max() - Y.min()
     y_padding = 0.1 * y_range  # 10% padding
     ax.set_xlim(x.min(), x.max())
-    ax.set_ylim(Y.min() - y_padding, Y.max() + y_padding)
+    # ax.set_ylim(Y.min() - y_padding, Y.max() + y_padding)
 
     time_text = ax.text(0.02, 0.95, "", transform=ax.transAxes)
 

@@ -7,9 +7,10 @@ from typing import Literal
 import meshio
 import numpy as np
 from scipy.linalg import eig
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import inv, spsolve
 from solidspy.assemutil import DME, assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9, elast_quad9
+from tqdm import tqdm
 
 from .constants import SOLUTION_TYPES
 from .constraints_loads_creators import SYSTEMS
@@ -124,20 +125,22 @@ def _compute_solution(
             m_uu, k_uu, k_ww, k_us, k_ws, f_u, f_w = decouple_global_matrices(
                 mass_mat, stiff_mat, rhs, eqs_u, eqs_w, eqs_s
             )
-            A = k_ws.T @ np.linalg.inv(k_ww) @ k_ws
-            inv_A = np.linalg.inv(A)
+
+            inv_k_ww = inv(k_ww)
+            A = k_ws.T @ inv_k_ww @ k_ws
+            inv_A = inv(A)
             B = k_us @ inv_A @ k_us.T
-            C = k_us @ inv_A @ np.linalg.inv(k_ww)
-            for i in range(1, n_t_iters - 1):
+            C = k_us @ inv_A @ k_ws.T @ inv_k_ww
+            for i in tqdm(range(1, n_t_iters - 1), desc="iterations"):
                 u_i_1 = solutions[eqs_u, i - 1]
                 u_i = solutions[eqs_u, i]
 
                 M = m_uu + dt**2 * (k_uu - B)
                 b = dt**2 * (f_u + C @ f_w) + m_uu * (2 * u_i - u_i_1)
 
-                solutions[eqs_u, i + 1] = np.linalg.solve(M, b)
-                
-                # here I could add solutions for theta and s in time, but this should in fact 
+                solutions[eqs_u, i + 1] = spsolve(M, b)
+
+                # here I could add solutions for theta and s in time, but this should in fact
                 # not be necessary...
 
         save_solution_files(bc_array, solutions, files_dict)

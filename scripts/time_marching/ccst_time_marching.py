@@ -62,19 +62,19 @@ def main():
         constraints_loads,
         materials,
         scenario_to_solve="eigenproblem",
-        force_reprocess=False,
+        force_reprocess=force_reprocess,
     )
 
     n_eigvec = 0
-    plot_fields_quad9_rot4(bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True)
+    # plot_fields_quad9_rot4(bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True)
 
     # the mesh and constraints are the same, so the exact structure of the eigvecs array
     # can be used as initial state
 
     initial_state = eigvecs[:, n_eigvec]
     scenario_to_solve = "time-marching"
-    n_t_iter = 10000
-    dt = 0.1
+    n_t_iter = 1000
+    dt = 0.01
     bc_array, solutions, nodes, elements = retrieve_solution(
         geometry_type,
         params,
@@ -101,16 +101,16 @@ def main():
         savepath=IMAGES_FOLDER + "/ccst_fixed_cantilever_mode0_implicit.gif",
     )
 
-    plot_oscillatory_movement_singleplot(
-        x_values,
-        ts[:2000],
-        Y_values[:2000, :],
-        n_plots=20,
-        xlabel="x",
-        ylabel="y",
-        title="Displacement of the bottom line",
-        savepath=IMAGES_FOLDER + "/ccst_fixed_cantilever_mode0_implicit.png",
-    )
+    # plot_oscillatory_movement_singleplot(
+    #     x_values,
+    #     ts[:2000],
+    #     Y_values[:2000, :],
+    #     n_plots=20,
+    #     xlabel="x",
+    #     ylabel="y",
+    #     title="Displacement of the bottom line",
+    #     savepath=IMAGES_FOLDER + "/ccst_fixed_cantilever_mode0_implicit.png",
+    # )
 
 
 if __name__ == "__main__":
