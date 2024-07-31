@@ -265,11 +265,31 @@ def get_variables_eqs(assem_op):
       Equations for the skew-symmetric part of the force-stress tensor.
 
     """
+    local_us = [0, 1, 3, 4, 6, 7, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    local_ws = [2, 5, 8, 11]
+    local_ss = [22]
 
-    pass
+    eqs_u = np.unique(assem_op[:, local_us].flatten())
+    eqs_u = eqs_u[eqs_u >= 0]
+
+    eqs_w = np.unique(assem_op[:, local_ws].flatten())
+    eqs_w = eqs_w[eqs_w >= 0]
+
+    eqs_s = np.unique(assem_op[:, local_ss].flatten())
+    eqs_s = eqs_s[eqs_s >= 0]
+
+    return eqs_u, eqs_w, eqs_s
 
 
 def decouple_global_matrices(mass_mat, stiff_mat, rhs, eqs_u, eqs_w, eqs_s):
     """Decouple the global matrices"""
     pass
-    # return m_uu, k_uu, k_ww, k_us, k_ws, f_u, f_w
+    m_uu = mass_mat[np.ix_(eqs_u, eqs_u)]
+    k_uu = stiff_mat[np.ix_(eqs_u, eqs_u)]
+    k_ww = stiff_mat[np.ix_(eqs_w, eqs_w)]
+    k_us = stiff_mat[np.ix_(eqs_u, eqs_s)]
+    k_ws = stiff_mat[np.ix_(eqs_w, eqs_s)]
+    f_u = rhs[eqs_u]
+    f_w = rhs[eqs_w]
+
+    return m_uu, k_uu, k_ww, k_us, k_ws, f_u, f_w

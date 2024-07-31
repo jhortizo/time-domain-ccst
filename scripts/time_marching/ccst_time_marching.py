@@ -62,7 +62,7 @@ def main():
         constraints_loads,
         materials,
         scenario_to_solve="eigenproblem",
-        force_reprocess=force_reprocess,
+        force_reprocess=False,
     )
 
     n_eigvec = 0
