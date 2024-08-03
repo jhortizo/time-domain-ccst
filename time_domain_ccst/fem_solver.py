@@ -136,7 +136,7 @@ def _compute_solution(
                 u_i = solutions[eqs_u, i]
 
                 M = m_uu + dt**2 * (k_uu - B)
-                b = dt**2 * (f_u + C @ f_w) + m_uu * (2 * u_i - u_i_1)
+                b = dt**2 * (f_u + C @ f_w) + m_uu @ (2 * u_i - u_i_1)
 
                 solutions[eqs_u, i + 1] = spsolve(M, b)
 
