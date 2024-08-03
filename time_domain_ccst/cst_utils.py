@@ -288,7 +288,7 @@ def decouple_global_matrices(mass_mat, stiff_mat, rhs, eqs_u, eqs_w, eqs_s):
     k_uu = stiff_mat[np.ix_(eqs_u, eqs_u)]
     k_ww = stiff_mat[np.ix_(eqs_w, eqs_w)]
     k_us = stiff_mat[np.ix_(eqs_u, eqs_s)]
-    k_ws = stiff_mat[np.ix_(eqs_w, eqs_s)]
+    k_ws = -1 * stiff_mat[np.ix_(eqs_w, eqs_s)]
     f_u = rhs[eqs_u]
     f_w = rhs[eqs_w]
 
