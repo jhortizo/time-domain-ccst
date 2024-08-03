@@ -81,6 +81,7 @@ def _compute_solution(
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
 
+    # TODO: I need to refactor this later, and to use it in the single case run in independent file
     if params["geometry_type"] == "single_element":
         side = params["side"]
         nodes = np.array(
