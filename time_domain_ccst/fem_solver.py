@@ -100,6 +100,8 @@ def _compute_solution(
         npts = nodes.shape[0]
         # Elements
         elements = np.array([[0, 4, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]])
+
+        # Cantilever with support case is hardcoded (TODO: should not be)
         cons = np.zeros((npts, 3), dtype=int)
         left_border = [0, 7, 3]
 
@@ -111,8 +113,8 @@ def _compute_solution(
         create_mesh(geometry_type, params, files_dict["mesh"])
 
         cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
-    # Assembly
 
+    # Assembly
     can_be_sparse = scenario_to_solve == "static"
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
