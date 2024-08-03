@@ -81,12 +81,38 @@ def _compute_solution(
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
 
-    create_mesh(geometry_type, params, files_dict["mesh"])
+    if params["geometry_type"] == "single_element":
+        side = params["side"]
+        nodes = np.array(
+            [
+                [0.0, -side / 2, -side / 2],
+                [0.0, side / 2, -side / 2],
+                [0.0, side / 2, side / 2],
+                [0.0, -side / 2, side / 2],
+                [0.0, 0.0, -side / 2],
+                [0.0, side / 2, 0.0],
+                [0.0, 0.0, side / 2],
+                [0.0, -side / 2, 0.0],
+                [0.0, 0.0, 0.0],
+            ]
+        )
+        npts = nodes.shape[0]
+        # Elements
+        elements = np.array([[0, 4, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]])
+        cons = np.zeros((npts, 3), dtype=int)
+        left_border = [0, 7, 3]
 
-    cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
+        cons[list(left_border), :] = -1
+        loads = np.zeros((npts, 4))  # empty loads
+        loads[:, 0] = np.arange(npts)  # specify nodes
+
+    else:
+        create_mesh(geometry_type, params, files_dict["mesh"])
+
+        cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
     # Assembly
 
-    can_be_sparse = (scenario_to_solve == "static")
+    can_be_sparse = scenario_to_solve == "static"
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
         elements, materials, nodes, neq, assem_op, uel=cst_element, sparse=can_be_sparse
