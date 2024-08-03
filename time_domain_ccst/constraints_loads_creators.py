@@ -37,10 +37,10 @@ def borders_fixed(line3, cell_data, npts):
     left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
 
     cons = np.zeros((npts, 3), dtype=int)
-    cons[list(lower_border), :2] = -1
-    cons[list(right_border), :2] = -1
-    cons[list(upper_border), :2] = -1
-    cons[list(left_border), :2] = -1
+    cons[list(lower_border), :] = -1
+    cons[list(right_border), :] = -1
+    cons[list(upper_border), :] = -1
+    cons[list(left_border), :] = -1
 
     loads = np.zeros((npts, 4))  # empty loads
 
