@@ -23,9 +23,9 @@ warnings.filterwarnings(
 def run_mms():
     plot_loads = "none"
     plot_field = "last"
-    force_reprocess = True
+    force_reprocess = False
 
-    u, u_fnc = manufactured_solution_3()
+    u, u_fnc, curl_fcn = manufactured_solution_3()
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
@@ -53,7 +53,7 @@ def run_mms():
         u_true = np.swapaxes(u_true, 0, 1)
 
         conditional_fields_plotting(
-            u_fem, nodes, elements, u_true, mesh_size, mesh_sizes, plot_field
+            u_fem, nodes, elements, u_true, mesh_size, mesh_sizes, plot_field, solution, bc_array, curl_fcn
         )
 
         rmse = np.sqrt(np.mean((u_true - u_fem) ** 2))

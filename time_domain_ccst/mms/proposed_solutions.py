@@ -57,4 +57,7 @@ def manufactured_solution_3() -> tuple[sp.Matrix, callable]:
     # )
 
     u_lambdified = sp.lambdify((x, y), u_2d, "numpy")
-    return u, u_lambdified
+
+    curl_u = vector.curl(u)
+    curl_lambdified = sp.lambdify((x, y), curl_u[2], "numpy")
+    return u, u_lambdified, curl_lambdified
