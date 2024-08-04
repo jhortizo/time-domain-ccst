@@ -156,6 +156,7 @@ def _compute_solution(
             )
 
             inv_k_ww = np.linalg.inv(k_ww)
+
             A = k_ws.T @ inv_k_ww @ k_ws
             inv_A = np.linalg.inv(A)
             B = k_us @ inv_A @ k_us.T
@@ -164,7 +165,7 @@ def _compute_solution(
                 u_i_1 = solutions[eqs_u, i - 1]
                 u_i = solutions[eqs_u, i]
 
-                M = m_uu + dt**2 * (k_uu - B)
+                M = m_uu + dt**2 * (k_uu + B)
                 b = dt**2 * (f_u + C @ f_w) + m_uu @ (2 * u_i - u_i_1)
 
                 solutions[eqs_u, i + 1] = np.linalg.solve(M, b)
