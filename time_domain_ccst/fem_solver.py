@@ -7,21 +7,27 @@ from typing import Literal
 import meshio
 import numpy as np
 from scipy.linalg import eig
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import inv, spsolve
 from solidspy.assemutil import DME, assembler, loadasem
 from solidspy_uels.solidspy_uels import assem_op_cst, cst_quad9, elast_quad9
+from tqdm import tqdm
 
 from .constants import SOLUTION_TYPES
 from .constraints_loads_creators import SYSTEMS
-from .cst_utils import assem_op_cst_quad9_rot4, cst_quad9_rot4
+from .cst_utils import (
+    assem_op_cst_quad9_rot4,
+    cst_quad9_rot4,
+    decouple_global_matrices,
+    get_variables_eqs,
+)
 from .gmesher import create_mesh
 from .utils import (
     check_solution_files_exists,
     generate_solution_filenames,
     load_solutions,
     postprocess_eigsolution,
-    save_solution_files,
     save_eigensolution_files,
+    save_solution_files,
 )
 
 cst_model_functions = {
@@ -75,11 +81,40 @@ def _compute_solution(
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
 
-    create_mesh(geometry_type, params, files_dict["mesh"])
+    # TODO: I need to refactor this later, and to use it in the single case run in independent file
+    if geometry_type == "single_element":
+        side = params["side"]
+        nodes = np.array(
+            [
+                [0.0, -side / 2, -side / 2],
+                [0.0, side / 2, -side / 2],
+                [0.0, side / 2, side / 2],
+                [0.0, -side / 2, side / 2],
+                [0.0, 0.0, -side / 2],
+                [0.0, side / 2, 0.0],
+                [0.0, 0.0, side / 2],
+                [0.0, -side / 2, 0.0],
+                [0.0, 0.0, 0.0],
+            ]
+        )
+        npts = nodes.shape[0]
+        # Elements
+        elements = np.array([[0, 4, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]])
 
-    cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
+        # Cantilever with support case is hardcoded (TODO: should not be)
+        cons = np.zeros((npts, 3), dtype=int)
+        left_border = [0, 7, 3]
+
+        cons[list(left_border), :] = -1
+        loads = np.zeros((npts, 4))  # empty loads
+        loads[:, 0] = np.arange(npts)  # specify nodes
+
+    else:
+        create_mesh(geometry_type, params, files_dict["mesh"])
+
+        cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
+
     # Assembly
-
     can_be_sparse = not (scenario_to_solve == "eigenproblem")
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
@@ -105,14 +140,38 @@ def _compute_solution(
         solutions = np.zeros((neq, n_t_iters))
         solutions[:, 0] = initial_state  # assume constant behavior in first steps
         solutions[:, 1] = initial_state
-        for i in range(1, n_t_iters - 1):
-            A = mass_mat + dt**2 * stiff_mat
-            b = (
-                dt**2 * rhs
-                + 2 * mass_mat @ solutions[:, i]
-                - mass_mat @ solutions[:, i - 1]
+        if cst_model == "classical_quad9":
+            for i in range(1, n_t_iters - 1):
+                A = mass_mat + dt**2 * stiff_mat
+                b = (
+                    dt**2 * rhs
+                    + 2 * mass_mat @ solutions[:, i]
+                    - mass_mat @ solutions[:, i - 1]
+                )
+                solutions[:, i + 1] = spsolve(A, b)
+        elif cst_model == "cst_quad9_rot4":
+            eqs_u, eqs_w, eqs_s = get_variables_eqs(assem_op)
+            m_uu, k_uu, k_ww, k_us, k_ws, f_u, f_w = decouple_global_matrices(
+                mass_mat, stiff_mat, rhs, eqs_u, eqs_w, eqs_s
             )
-            solutions[:, i + 1] = spsolve(A, b)
+
+            inv_k_ww = inv(k_ww)
+
+            A = k_ws.T @ inv_k_ww @ k_ws
+            inv_A = inv(A)
+            B = k_us @ inv_A @ k_us.T
+            C = k_us @ inv_A @ k_ws.T @ inv_k_ww
+            for i in tqdm(range(1, n_t_iters - 1), desc="iterations"):
+                u_i_1 = solutions[eqs_u, i - 1]
+                u_i = solutions[eqs_u, i]
+
+                M = m_uu + dt**2 * (k_uu + B)
+                b = dt**2 * (f_u + C @ f_w) + m_uu @ (2 * u_i - u_i_1)
+
+                solutions[eqs_u, i + 1] = spsolve(M, b)
+
+                # here I could calculate also for theta and s, but it is not necessary
+
         save_solution_files(bc_array, solutions, files_dict)
         return bc_array, solutions, nodes, elements
 

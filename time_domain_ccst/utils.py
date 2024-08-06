@@ -90,7 +90,7 @@ def load_dynamic_solution_files(files_dict):
     "Loads solution files"
     bc_array = np.loadtxt(files_dict["bc_array"], delimiter=",", dtype=int)
     bc_array = bc_array.reshape(-1, 1) if bc_array.ndim == 1 else bc_array
-    solution = np.loadtxt(files_dict["time_solutions"], delimiter=",")
+    solution = np.loadtxt(files_dict["solution"], delimiter=",")
     return bc_array, solution
 
 

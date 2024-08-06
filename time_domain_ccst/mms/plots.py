@@ -33,6 +33,9 @@ def conditional_fields_plotting(
     mesh_size,
     mesh_sizes,
     plot_field: Literal["all", "last"],
+    solution,
+    bc_array,
+    curl_fcn,
 ):
     if plot_field == "all":
         plot_node_field(
@@ -45,6 +48,34 @@ def conditional_fields_plotting(
         )
         plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
 
+        vertex_nodes = list(set(elements[:, 3:7].flatten()))
+        sol_rotation = complete_disp(
+            bc_array[vertex_nodes, 2].reshape(-1, 1),
+            nodes[vertex_nodes],
+            solution,
+            ndof_node=1,
+        )
+
+        x = nodes[vertex_nodes][:, 1]
+        y = nodes[vertex_nodes][:, 2]
+        z = sol_rotation.flatten()
+
+        fig, ax = plt.subplots()
+        # Create a contour plot
+        contour = ax.tricontourf(x, y, z, levels=50, cmap="viridis")
+        fig.colorbar(contour, ax=ax)
+        plt.title("W")
+        plt.show()
+
+        z_teo = curl_fcn(x, y)
+
+        fig, ax = plt.subplots()
+        # Create a contour plot
+        contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="viridis")
+        fig.colorbar(contour, ax=ax)
+        plt.title("W_teo")
+        plt.show()
+
     elif plot_field == "last" and mesh_size == mesh_sizes[-1]:
         plot_node_field(
             u_fem[:, 0],
@@ -55,6 +86,34 @@ def conditional_fields_plotting(
             ],
         )
         plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
+
+        vertex_nodes = list(set(elements[:, 3:7].flatten()))
+        sol_rotation = complete_disp(
+            bc_array[vertex_nodes, 2].reshape(-1, 1),
+            nodes[vertex_nodes],
+            solution,
+            ndof_node=1,
+        )
+
+        x = nodes[vertex_nodes][:, 1]
+        y = nodes[vertex_nodes][:, 2]
+        z = sol_rotation.flatten()
+
+        fig, ax = plt.subplots()
+        # Create a contour plot
+        contour = ax.tricontourf(x, y, z, levels=50, cmap="viridis")
+        fig.colorbar(contour, ax=ax)
+        plt.title("W")
+        plt.show()
+
+        z_teo = curl_fcn(x, y)
+
+        fig, ax = plt.subplots()
+        # Create a contour plot
+        contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="viridis")
+        fig.colorbar(contour, ax=ax)
+        plt.title("W_teo")
+        plt.show()
 
 
 def convergence_plot(
@@ -78,7 +137,7 @@ def convergence_plot(
 
     plt.text(0.5, 0.9, f"Slope: {round(slope,2)}", transform=plt.gca().transAxes)
     if filename:
-        plt.savefig(f'{IMAGES_FOLDER}/{filename}', dpi=300)
+        plt.savefig(f"{IMAGES_FOLDER}/{filename}", dpi=300)
     plt.show()
 
     print("Slope:", slope)
