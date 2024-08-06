@@ -9,7 +9,7 @@ from solidspy.postprocesor import complete_disp
 from time_domain_ccst.constants import IMAGES_FOLDER
 from time_domain_ccst.fem_solver import retrieve_solution
 from time_domain_ccst.plotter import (
-    plot_fields_quad9_rot4,
+    # plot_fields_quad9_rot4,
     plot_oscillatory_movement,
     plot_oscillatory_movement_singleplot,
 )
@@ -55,7 +55,7 @@ def main():
     # first solve the eigenvalue problem and acquire an eigenstate
     scenario_to_solve = "eigenproblem"
 
-    bc_array, eigvals, eigvecs, nodes, elements = retrieve_solution(
+    bc_array, _, eigvecs, nodes, _ = retrieve_solution(
         geometry_type,
         params,
         cst_model,
@@ -73,9 +73,9 @@ def main():
 
     initial_state = eigvecs[:, n_eigvec]
     scenario_to_solve = "time-marching"
-    n_t_iter = 1000
-    dt = 0.01
-    bc_array, solutions, nodes, elements = retrieve_solution(
+    n_t_iter = 10000
+    dt = 0.1
+    bc_array, solutions, nodes, _ = retrieve_solution(
         geometry_type,
         params,
         cst_model,
@@ -101,16 +101,16 @@ def main():
         savepath=IMAGES_FOLDER + "/ccst_fixed_cantilever_mode0_implicit.gif",
     )
 
-    # plot_oscillatory_movement_singleplot(
-    #     x_values,
-    #     ts[:2000],
-    #     Y_values[:2000, :],
-    #     n_plots=20,
-    #     xlabel="x",
-    #     ylabel="y",
-    #     title="Displacement of the bottom line",
-    #     savepath=IMAGES_FOLDER + "/ccst_fixed_cantilever_mode0_implicit.png",
-    # )
+    plot_oscillatory_movement_singleplot(
+        x_values,
+        ts[:2000],
+        Y_values[:2000, :],
+        n_plots=20,
+        xlabel="x",
+        ylabel="y",
+        title="Displacement of the bottom line",
+        savepath=IMAGES_FOLDER + "/ccst_fixed_cantilever_mode0_implicit.png",
+    )
 
 
 if __name__ == "__main__":

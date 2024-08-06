@@ -115,7 +115,7 @@ def _compute_solution(
         cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
 
     # Assembly
-    can_be_sparse = scenario_to_solve == "static"
+    can_be_sparse = not (scenario_to_solve == "eigenproblem")
     assem_op, bc_array, neq = assem_op(cons, elements)
     stiff_mat, mass_mat = assembler(
         elements, materials, nodes, neq, assem_op, uel=cst_element, sparse=can_be_sparse
@@ -155,10 +155,10 @@ def _compute_solution(
                 mass_mat, stiff_mat, rhs, eqs_u, eqs_w, eqs_s
             )
 
-            inv_k_ww = np.linalg.inv(k_ww)
+            inv_k_ww = inv(k_ww)
 
             A = k_ws.T @ inv_k_ww @ k_ws
-            inv_A = np.linalg.inv(A)
+            inv_A = inv(A)
             B = k_us @ inv_A @ k_us.T
             C = k_us @ inv_A @ k_ws.T @ inv_k_ww
             for i in tqdm(range(1, n_t_iters - 1), desc="iterations"):
@@ -168,10 +168,9 @@ def _compute_solution(
                 M = m_uu + dt**2 * (k_uu + B)
                 b = dt**2 * (f_u + C @ f_w) + m_uu @ (2 * u_i - u_i_1)
 
-                solutions[eqs_u, i + 1] = np.linalg.solve(M, b)
+                solutions[eqs_u, i + 1] = spsolve(M, b)
 
-                # here I could add solutions for theta and s in time, but this should in fact
-                # not be necessary...
+                # here I could calculate also for theta and s, but it is not necessary
 
         save_solution_files(bc_array, solutions, files_dict)
         return bc_array, solutions, nodes, elements
