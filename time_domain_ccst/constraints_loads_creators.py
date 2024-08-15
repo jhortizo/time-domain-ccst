@@ -70,7 +70,7 @@ def quarter_ring_rollers_axial_load(line3, cell_data, npts):
     return cons, loads
 
 
-def cantilever_support_load(line3, cell_data, npts):
+def cantilever_support_load(line3, cell_data, npts, load=-1):
     """
     TODO: properly describe this, maybe add some figures to illustrate...
     """
@@ -84,7 +84,7 @@ def cantilever_support_load(line3, cell_data, npts):
     loads = np.zeros((npts, 4))  # empty loads
     loads[:, 0] = np.arange(npts)  # specify nodes
 
-    loads[list(right_border), 1 + 1] = -1  # force in y direction
+    loads[list(right_border), 1 + 1] = load  # force in y direction
 
     return cons, loads
 

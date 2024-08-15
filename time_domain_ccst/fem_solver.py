@@ -38,7 +38,7 @@ cst_model_functions = {
 
 
 def _load_mesh(
-    mesh_file: str, cons_loads_fcn: callable
+    mesh_file: str, cons_loads_fcn: callable, cons_loads_fcn_params: dict
 ) -> tuple[np.array, np.array, np.array, np.array]:
     mesh = meshio.read(mesh_file)
 
@@ -62,14 +62,15 @@ def _load_mesh(
 
     line3 = cells["line3"]
     cell_data = mesh.cell_data
-    cons, loads = cons_loads_fcn(line3, cell_data, npts)
+    cons, loads = cons_loads_fcn(line3, cell_data, npts, **cons_loads_fcn_params)
 
     return cons, elements, nodes, loads
 
 
 def _compute_solution(
     geometry_type: str,
-    params: dict,
+    geometry_mesh_params: dict,
+    cons_loads_fcn_params: dict,
     files_dict: dict,
     cst_model: str,
     cons_loads_fcn: callable,
@@ -83,7 +84,7 @@ def _compute_solution(
 
     # TODO: I need to refactor this later, and to use it in the single case run in independent file
     if geometry_type == "single_element":
-        side = params["side"]
+        side = geometry_mesh_params["side"]
         nodes = np.array(
             [
                 [0.0, -side / 2, -side / 2],
@@ -110,9 +111,9 @@ def _compute_solution(
         loads[:, 0] = np.arange(npts)  # specify nodes
 
     else:
-        create_mesh(geometry_type, params, files_dict["mesh"])
+        create_mesh(geometry_type, geometry_mesh_params, files_dict["mesh"])
 
-        cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn)
+        cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params)
 
     # Assembly
     can_be_sparse = not (scenario_to_solve == "eigenproblem")
@@ -178,7 +179,7 @@ def _compute_solution(
 
 def retrieve_solution(
     geometry_type: str,
-    params: dict,
+    geometry_mesh_params: dict,
     cst_model: str,
     constraints_loads: str,
     materials: np.ndarray,
@@ -188,26 +189,27 @@ def retrieve_solution(
     dt: float | None = None,
     n_t_iter: int | None = None,
     initial_state: np.ndarray | None = None,
+    cons_loads_fcn_params: dict = {},
 ):
     files_dict = generate_solution_filenames(
         geometry_type,
         cst_model,
         constraints_loads,
         scenario_to_solve,
-        params,
+        geometry_mesh_params,
         custom_str=custom_str,
     )
     cons_loads_fcn = SYSTEMS[constraints_loads]
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
-        _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn)
+        _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params)
         solution_structures = load_solutions(files_dict, scenario_to_solve)
         complete_response = (*solution_structures, nodes, elements)
 
     else:
         complete_response = _compute_solution(
             geometry_type,
-            params,
+            geometry_mesh_params,
             files_dict,
             cst_model,
             cons_loads_fcn,
