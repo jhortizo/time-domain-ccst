@@ -213,6 +213,7 @@ def retrieve_solution(
         complete_response = _compute_solution(
             geometry_type,
             geometry_mesh_params,
+            cons_loads_fcn_params,
             files_dict,
             cst_model,
             cons_loads_fcn,
