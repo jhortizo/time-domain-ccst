@@ -7,33 +7,26 @@ from time_domain_ccst.constants import IMAGES_FOLDER
 from time_domain_ccst.fem_solver import retrieve_solution
 
 
-def do_comparison_plotting(
-    nodes_lowers: list[np.ndarray],
-    norm_u_lowers: list[np.ndarray],
+def do_stiffness_variation_plotting(
     h_l_ratios: np.ndarray,
+    adim_stiff: np.ndarray,
 ) -> None:
-    plt.rcParams["font.size"] = 24
+    plt.rcParams["font.size"] = 16
     plt.figure(figsize=(12, 7))
 
-    for i in range(len(h_l_ratios)):
-        plt.plot(
-            nodes_lowers[i][:, 1],
-            norm_u_lowers[i, :],
-            ".",
-            label=f"h/l = {h_l_ratios[i]:.0e}",
-        )
+    plt.plot(h_l_ratios, adim_stiff, "o-")
+    plt.xlabel("h/l")
+    plt.ylabel("Stiffness")
+    plt.xscale("log")
+    plt.yscale("log")
 
-    plt.xlabel(r"$x$")
-    plt.ylabel("Vertical displacement")
-    plt.legend()
-    plt.grid()
-    plt.savefig(IMAGES_FOLDER + "/compare_cantilever_displacement.png", dpi=300)
+    plt.savefig(IMAGES_FOLDER + "/compare_rigidity_variation.png", dpi=300)
     plt.show()
 
 
 def main():
     geometry_type = "rectangle"
-    force_reprocess = False
+    force_reprocess = True
     cst_model = "cst_quad9_rot4"
     constraints_loads = "cantilever_support_load"
 
@@ -46,7 +39,7 @@ def main():
     L = 20 * h
     params = {"side_y": h, "side_x": L, "mesh_size": 0.1}
 
-    h_l_ratios = np.logspace(1e-4, 1e4, 9)
+    h_l_ratios = np.logspace(-4, 4, 9)
     ls = h / h_l_ratios
     etas = ls**2 * mu
 
@@ -74,35 +67,15 @@ def main():
 
         u = complete_disp(bc_array, nodes, solution, ndof_node=2)
 
-        # low_border_ids = np.where(nodes[:, 2] == 0)[0]
-
-        # nodes_lower = nodes[low_border_ids]
-        # u_lower = u[low_border_ids]
-
-        # nodes_lowers.append(nodes_lower)
-        # u_y_lowers.append(u_lower[:, 1])
-
-        # now get the node closest to the tip
-        tip_coordinates = np.array([[0, L, h/2]])
+        tip_coordinates = np.array([[0, L, h / 2]])
         tip_node_id = np.argmin(np.linalg.norm(nodes - tip_coordinates, axis=1))
         tip_y_disp = u[tip_node_id, 1]
         K = abs(vertical_load / tip_y_disp)
         Ks.append(K)
 
-    # max_u_lower_val = abs(np.array(u_y_lowers).min())
-    # norm_u_lowers = u_y_lowers / max_u_lower_val
-    # do_comparison_plotting(nodes_lowers, norm_u_lowers, h_l_ratios)
-    I_ = h**3/12
+    I_ = h**3 / 12
     adim_stiff = np.array(Ks) * L**3 / (3 * E * I_)
-
-    plt.figure()
-    plt.plot(h_l_ratios, adim_stiff, "o-")
-    plt.xlabel("h/l")
-    plt.ylabel("Stiffness")
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.show()
-
+    do_stiffness_variation_plotting(h_l_ratios, adim_stiff)
 
 
 if __name__ == "__main__":
