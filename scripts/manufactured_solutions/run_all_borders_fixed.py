@@ -32,8 +32,7 @@ def run_mms():
 
     mesh_sizes = np.logspace(np.log10(1), np.log10(1e-2), num=5)
 
-    rmses = []
-    max_errors = []
+    l2_errors = []
     n_elements = []
     for mesh_size in tqdm(mesh_sizes, desc="Mesh sizes"):
         bc_array, solution, nodes, elements, rhs, mass_mat = (
@@ -44,17 +43,15 @@ def run_mms():
         print("Mesh size:", len(elements), " elements")
 
         u_fem = complete_disp(bc_array, nodes, solution, ndof_node=2)
-        # some other dev code to check the loads
-
-        conditional_loads_plotting(
-            bc_array, nodes, rhs, elements, mesh_size, mesh_sizes, plot_loads
-        )
 
         # correctly reorder array from (2, 1, nnodes) to (nnodes, 2)
         u_true = u_fnc(nodes[:, 1], nodes[:, 2])
         u_true = np.squeeze(u_true)
         u_true = np.swapaxes(u_true, 0, 1)
 
+        conditional_loads_plotting(
+            bc_array, nodes, rhs, elements, mesh_size, mesh_sizes, plot_loads
+        )
         conditional_fields_plotting(
             u_fem,
             nodes,
@@ -68,14 +65,21 @@ def run_mms():
             curl_fcn,
         )
 
-        rmse = np.sqrt(np.mean((u_true - u_fem) ** 2))
-        max_error = np.max(np.abs(u_true - u_fem))
+        solution_teo = inverse_complete_disp(
+            bc_array, nodes, u_true, len(elements), ndof_node=2
+        )
+        e = solution_teo - solution
+        l2_error = e.T @ mass_mat @ e
 
         n_elements.append(len(elements))
-        rmses.append(rmse)
-        max_errors.append(max_error)
+        l2_errors.append(l2_error)
 
-    convergence_plot(mesh_sizes, rmses, filename="mms_convergence.png")
+    convergence_plot(
+        mesh_sizes,
+        l2_errors,
+        error_metric_name="Error L2 Norm",
+        filename="mms_convergence_l2norm.png",
+    )
 
 
 if __name__ == "__main__":

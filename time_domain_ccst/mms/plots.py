@@ -118,17 +118,18 @@ def conditional_fields_plotting(
 
 def convergence_plot(
     mesh_sizes,
-    rmses,
+    errors,
+    error_metric_name: str,
     filename: str = None,
 ):
     log_mesh = np.log10(mesh_sizes)
-    log_rmse = np.log10(rmses)
+    log_rmse = np.log10(errors)
 
     slope = np.polyfit(log_mesh, log_rmse, 1)[0]
 
     # and then plot the results
     plt.figure()
-    plt.loglog(mesh_sizes, rmses, label="RMSE")
+    plt.loglog(mesh_sizes, errors, label=error_metric_name)
     # plt.loglog(n_elements, max_errors, label="Max Error")
     plt.xlabel("Mesh length")
     plt.ylabel("Error")
