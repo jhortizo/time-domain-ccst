@@ -6,6 +6,7 @@ import numpy as np
 import sympy as sp
 from continuum_mechanics.solids import c_cst
 from scipy.sparse.linalg import spsolve
+from scipy.sparse import save_npz, load_npz
 from solidspy.assemutil import assembler, loadasem
 
 from time_domain_ccst.constants import MESHES_FOLDER, SOLUTIONS_FOLDER
@@ -97,7 +98,7 @@ def check_manual_vs_continuum_mechanics(
 
 def generate_load_mesh(mesh_size: float, mesh_file: str):
     _create_square_mesh(1.0, mesh_size, mesh_file)
-    cons, elements, nodes, loads = _load_mesh(mesh_file, borders_fixed)
+    cons, elements, nodes, loads = _load_mesh(mesh_file, borders_fixed, {})
     return cons, elements, nodes, loads
 
 
@@ -126,8 +127,9 @@ def solve_manufactured_solution(
     solution_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-solution.csv"
     bc_array_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-bc_array.csv"
     rhs_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-rhs.csv"
+    mass_mat_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-mass_mat.npz"
 
-    files_list = [mesh_file, solution_file, bc_array_file]
+    files_list = [mesh_file, solution_file, bc_array_file, mass_mat_file]
 
     # TODO: this is being redone over and over again, consider refactoring this as well
     cons, elements, nodes, loads = generate_load_mesh(mesh_size, mesh_file)
@@ -160,12 +162,25 @@ def solve_manufactured_solution(
         np.savetxt(solution_file, solution, delimiter=",")
         np.savetxt(bc_array_file, bc_array, delimiter=",")
         np.savetxt(rhs_file, rhs, delimiter=",")
+        save_npz(mass_mat_file, mass_mat)
 
     else:
         bc_array = np.loadtxt(bc_array_file, delimiter=",").astype(np.int64)
         bc_array = bc_array.reshape(-1, 1) if bc_array.ndim == 1 else bc_array
         solution = np.loadtxt(solution_file, delimiter=",")
         rhs = np.loadtxt(rhs_file, delimiter=",")
+        mass_mat = load_npz(mass_mat_file)
         cons, elements, nodes, loads = generate_load_mesh(mesh_size, mesh_file)
 
-    return bc_array, solution, nodes, elements, rhs
+    return bc_array, solution, nodes, elements, rhs, mass_mat
+
+
+def inverse_complete_disp(bc_array, nodes, sol_complete, len_elements, ndof_node=2):
+    nnodes = nodes.shape[0]
+    sol = np.zeros(bc_array.max() + len_elements + 1, dtype=float)
+    for row in range(nnodes):
+        for col in range(ndof_node):
+            cons = bc_array[row, col]
+            if cons != -1:
+                sol[cons] = sol_complete[row, col]
+    return sol

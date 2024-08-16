@@ -9,11 +9,12 @@ from time_domain_ccst.mms.plots import (
     conditional_loads_plotting,
     convergence_plot,
 )
+from time_domain_ccst.mms.proposed_solutions import manufactured_solution_3
 from time_domain_ccst.mms.utils import (
     calculate_body_force_fcn_continuum_mechanics,
+    inverse_complete_disp,
     solve_manufactured_solution,
 )
-from time_domain_ccst.mms.proposed_solutions import manufactured_solution_3
 
 warnings.filterwarnings(
     "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
@@ -23,7 +24,7 @@ warnings.filterwarnings(
 def run_mms():
     plot_loads = "none"
     plot_field = "last"
-    force_reprocess = False
+    force_reprocess = True
 
     u, u_fnc, curl_fcn = manufactured_solution_3()
 
@@ -35,8 +36,10 @@ def run_mms():
     max_errors = []
     n_elements = []
     for mesh_size in tqdm(mesh_sizes, desc="Mesh sizes"):
-        bc_array, solution, nodes, elements, rhs = solve_manufactured_solution(
-            mesh_size, body_force_fcn, force_reprocess=force_reprocess
+        bc_array, solution, nodes, elements, rhs, mass_mat = (
+            solve_manufactured_solution(
+                mesh_size, body_force_fcn, force_reprocess=force_reprocess
+            )
         )
         print("Mesh size:", len(elements), " elements")
 
@@ -53,7 +56,16 @@ def run_mms():
         u_true = np.swapaxes(u_true, 0, 1)
 
         conditional_fields_plotting(
-            u_fem, nodes, elements, u_true, mesh_size, mesh_sizes, plot_field, solution, bc_array, curl_fcn
+            u_fem,
+            nodes,
+            elements,
+            u_true,
+            mesh_size,
+            mesh_sizes,
+            plot_field,
+            solution,
+            bc_array,
+            curl_fcn,
         )
 
         rmse = np.sqrt(np.mean((u_true - u_fem) ** 2))
