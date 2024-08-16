@@ -126,6 +126,9 @@ def _compute_solution(
         # static solution does not take into acount the mass matrix
         # for freq. solution, do spsolve(stiff_mat - omega**2 * mass_mat, rhs)
         rhs = loadasem(loads, bc_array, neq)
+        # fix nodal loads by weighting them with the mass matrix
+        # TODO: only works if density is constant and equal to 1
+        rhs = mass_mat @ rhs
         solution = spsolve(stiff_mat, rhs)
         save_solution_files(bc_array, solution, files_dict)
         return bc_array, solution, nodes, elements
@@ -210,6 +213,7 @@ def retrieve_solution(
         complete_response = _compute_solution(
             geometry_type,
             geometry_mesh_params,
+            cons_loads_fcn_params,
             files_dict,
             cst_model,
             cons_loads_fcn,
