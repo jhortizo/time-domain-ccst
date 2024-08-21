@@ -23,14 +23,14 @@ warnings.filterwarnings(
 
 def run_mms():
     plot_loads = "none"
-    plot_field = "last"
-    force_reprocess = True
+    plot_field = "none"
+    force_reprocess = False
 
     u, u_fnc, curl_fcn = manufactured_solution_3()
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
-    mesh_sizes = np.logspace(np.log10(1), np.log10(1e-2), num=5)
+    mesh_sizes = np.logspace(0, -3, num=7)
 
     l2_errors = []
     n_elements = []
