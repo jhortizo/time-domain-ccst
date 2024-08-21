@@ -9,7 +9,7 @@ from time_domain_ccst.mms.plots import (
     conditional_loads_plotting,
     convergence_plot,
 )
-from time_domain_ccst.mms.proposed_solutions import manufactured_solution_3
+from time_domain_ccst.mms.proposed_solutions import manufactured_solution
 from time_domain_ccst.mms.utils import (
     calculate_body_force_fcn_continuum_mechanics,
     inverse_complete_disp,
@@ -26,7 +26,7 @@ def run_mms():
     plot_field = "none"
     force_reprocess = False
 
-    u, u_fnc, curl_fcn = manufactured_solution_3()
+    u, u_fnc, curl_fcn = manufactured_solution()
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
