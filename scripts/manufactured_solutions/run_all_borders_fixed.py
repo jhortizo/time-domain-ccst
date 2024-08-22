@@ -27,6 +27,7 @@ def run_mms():
     force_reprocess = False
 
     u, u_fnc, curl_fcn = manufactured_solution()
+    custom_string = ""
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
@@ -37,7 +38,7 @@ def run_mms():
     for mesh_size in tqdm(mesh_sizes, desc="Mesh sizes"):
         bc_array, solution, nodes, elements, rhs, mass_mat = (
             solve_manufactured_solution(
-                mesh_size, body_force_fcn, force_reprocess=force_reprocess
+                mesh_size, body_force_fcn, force_reprocess=force_reprocess, custom_string=custom_string
             )
         )
         print("Mesh size:", len(elements), " elements")

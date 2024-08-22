@@ -120,9 +120,9 @@ def impose_body_force_loads(
 
 
 def solve_manufactured_solution(
-    mesh_size: float, body_force_fcn: callable, force_reprocess: bool = False
+    mesh_size: float, body_force_fcn: callable, force_reprocess: bool = False, custom_string: str = ""
 ):
-    solution_identifier = f"manufactured_solution_mesh_size_{mesh_size}"
+    solution_identifier = f"manufactured_solution_mesh_size_{mesh_size}{custom_string}"
     mesh_file = f"{MESHES_FOLDER}/{solution_identifier}.msh"
     solution_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-solution.csv"
     bc_array_file = f"{SOLUTIONS_FOLDER}/{solution_identifier}-bc_array.csv"
