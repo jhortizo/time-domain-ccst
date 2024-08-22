@@ -37,98 +37,65 @@ def conditional_fields_plotting(
     bc_array,
     curl_fcn,
 ):
+    def plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn):
+        plot_node_field(
+            u_fem[:, 0],
+            nodes,
+            elements,
+            title=[
+                f"u_x FEM_{len(elements)}_elements",
+            ],
+        )
+        plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
+
+        vertex_nodes = list(set(elements[:, 3:7].flatten()))
+        sol_rotation = complete_disp(
+            bc_array[vertex_nodes, 2].reshape(-1, 1),
+            nodes[vertex_nodes],
+            solution,
+            ndof_node=1,
+        )
+
+        x = nodes[vertex_nodes][:, 1]
+        y = nodes[vertex_nodes][:, 2]
+        z = sol_rotation.flatten()
+
+        fig, ax = plt.subplots()
+        # Create a contour plot
+        contour = ax.tricontourf(x, y, z, levels=50, cmap="viridis")
+        fig.colorbar(contour, ax=ax)
+        plt.title("W")
+        plt.show()
+
+        z_teo = curl_fcn(x, y)
+
+        fig, ax = plt.subplots()
+        # Create a contour plot
+        contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="viridis")
+        fig.colorbar(contour, ax=ax)
+        plt.title("W_teo")
+        plt.show()
+
     if plot_field == "all":
-        plot_node_field(
-            u_fem[:, 0],
-            nodes,
-            elements,
-            title=[
-                f"u_x FEM_{len(elements)}_elements",
-            ],
-        )
-        plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
-
-        vertex_nodes = list(set(elements[:, 3:7].flatten()))
-        sol_rotation = complete_disp(
-            bc_array[vertex_nodes, 2].reshape(-1, 1),
-            nodes[vertex_nodes],
-            solution,
-            ndof_node=1,
-        )
-
-        x = nodes[vertex_nodes][:, 1]
-        y = nodes[vertex_nodes][:, 2]
-        z = sol_rotation.flatten()
-
-        fig, ax = plt.subplots()
-        # Create a contour plot
-        contour = ax.tricontourf(x, y, z, levels=50, cmap="viridis")
-        fig.colorbar(contour, ax=ax)
-        plt.title("W")
-        plt.show()
-
-        z_teo = curl_fcn(x, y)
-
-        fig, ax = plt.subplots()
-        # Create a contour plot
-        contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="viridis")
-        fig.colorbar(contour, ax=ax)
-        plt.title("W_teo")
-        plt.show()
-
+        plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn)
     elif plot_field == "last" and mesh_size == mesh_sizes[-1]:
-        plot_node_field(
-            u_fem[:, 0],
-            nodes,
-            elements,
-            title=[
-                f"u_x FEM_{len(elements)}_elements",
-            ],
-        )
-        plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
-
-        vertex_nodes = list(set(elements[:, 3:7].flatten()))
-        sol_rotation = complete_disp(
-            bc_array[vertex_nodes, 2].reshape(-1, 1),
-            nodes[vertex_nodes],
-            solution,
-            ndof_node=1,
-        )
-
-        x = nodes[vertex_nodes][:, 1]
-        y = nodes[vertex_nodes][:, 2]
-        z = sol_rotation.flatten()
-
-        fig, ax = plt.subplots()
-        # Create a contour plot
-        contour = ax.tricontourf(x, y, z, levels=50, cmap="viridis")
-        fig.colorbar(contour, ax=ax)
-        plt.title("W")
-        plt.show()
-
-        z_teo = curl_fcn(x, y)
-
-        fig, ax = plt.subplots()
-        # Create a contour plot
-        contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="viridis")
-        fig.colorbar(contour, ax=ax)
-        plt.title("W_teo")
-        plt.show()
+        plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn)
 
 
 def convergence_plot(
     mesh_sizes,
-    rmses,
+    errors,
+    error_metric_name: str,
     filename: str = None,
 ):
     log_mesh = np.log10(mesh_sizes)
-    log_rmse = np.log10(rmses)
+    log_rmse = np.log10(errors)
 
     slope = np.polyfit(log_mesh, log_rmse, 1)[0]
 
     # and then plot the results
     plt.figure()
-    plt.loglog(mesh_sizes, rmses, label="RMSE")
+    plt.loglog(mesh_sizes, errors, 'o-', label=error_metric_name)
     # plt.loglog(n_elements, max_errors, label="Max Error")
     plt.xlabel("Mesh length")
     plt.ylabel("Error")
