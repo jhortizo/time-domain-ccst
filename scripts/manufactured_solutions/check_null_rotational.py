@@ -1,7 +1,7 @@
 import sympy as sp
 from continuum_mechanics import vector
 
-from time_domain_ccst.mms.proposed_solutions import manufactured_solution
+from time_domain_ccst.mms.proposed_solutions import manufactured_solution_no_oscillation
 
 x, y = sp.symbols("x y")
 
@@ -38,7 +38,7 @@ def check_boundary_conditions(manufactured_solution: callable) -> None:
 
 
 if __name__ == "__main__":
-    fcn_to_check = manufactured_solution
+    fcn_to_check = manufactured_solution_no_oscillation
 
     # check_null_rotational(fcn_to_check)
     check_boundary_conditions(fcn_to_check)

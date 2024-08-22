@@ -9,7 +9,12 @@ from time_domain_ccst.mms.plots import (
     conditional_loads_plotting,
     convergence_plot,
 )
-from time_domain_ccst.mms.proposed_solutions import manufactured_solution
+from time_domain_ccst.mms.proposed_solutions import (
+    manufactured_solution_added_oscillations,
+    manufactured_solution_no_oscillations,
+    manufactured_solution_null_curl,
+    manufactured_solution_null_curl_added_oscillations,
+)
 from time_domain_ccst.mms.utils import (
     calculate_body_force_fcn_continuum_mechanics,
     inverse_complete_disp,
@@ -23,22 +28,34 @@ warnings.filterwarnings(
 
 def run_mms():
     plot_loads = "none"
-    plot_field = "none"
+    plot_field = "last"
     force_reprocess = False
 
-    u, u_fnc, curl_fcn = manufactured_solution()
-    custom_string = ""
+    # u, u_fnc, curl_fcn = manufactured_solution_added_oscillations()
+    # custom_string = "_non_null_curl_added_oscillation_6"
+
+    # u, u_fnc, curl_fcn = manufactured_solution_null_curl()
+    # custom_string = "_null_curl"
+
+    u, u_fnc, curl_fcn = manufactured_solution_null_curl_added_oscillations()
+    custom_string = "_null_curl_added_oscillations"
+
+    # u, u_fnc, curl_fcn = manufactured_solution_no_oscillations()
+    # custom_string = "_non_null_curl_no_oscillations"
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
-    mesh_sizes = np.logspace(0, -3, num=7)
+    mesh_sizes = np.logspace(0, -2, num=5)
 
     l2_errors = []
     n_elements = []
     for mesh_size in tqdm(mesh_sizes, desc="Mesh sizes"):
         bc_array, solution, nodes, elements, rhs, mass_mat = (
             solve_manufactured_solution(
-                mesh_size, body_force_fcn, force_reprocess=force_reprocess, custom_string=custom_string
+                mesh_size,
+                body_force_fcn,
+                force_reprocess=force_reprocess,
+                custom_string=custom_string,
             )
         )
         print("Mesh size:", len(elements), " elements")
@@ -79,7 +96,7 @@ def run_mms():
         mesh_sizes,
         l2_errors,
         error_metric_name="Error L2 Norm",
-        filename="mms_convergence_l2norm.png",
+        filename=f"mms_convergence_l2norm{custom_string}.png",
     )
 
 
