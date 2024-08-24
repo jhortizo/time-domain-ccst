@@ -31,6 +31,7 @@ def run_mms():
     plot_field = "all"
     force_reprocess = False
 
+    print("Running symbolic calculations for the manufactured solution")
     u, u_fnc, curl_fcn = manufactured_solution_added_oscillations()
     custom_string = "_non_null_curl_added_oscillation_6"
 
@@ -45,10 +46,11 @@ def run_mms():
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
-    mesh_sizes = np.logspace(0, -2, num=5)
+    mesh_sizes = np.logspace(0, -2, num=9)
 
     l2_errors = []
     n_elements = []
+    print("Symbolic calculations done. Starting numerical simulations")
     for mesh_size in tqdm(mesh_sizes, desc="Mesh sizes"):
         bc_array, solution, nodes, elements, rhs, mass_mat = (
             solve_manufactured_solution(
@@ -94,10 +96,10 @@ def run_mms():
         l2_errors.append(l2_error)
 
     convergence_plot(
-        mesh_sizes,
+        n_elements,
         l2_errors,
         error_metric_name="Error L2 Norm",
-        filename=f"mms_convergence_l2norm{custom_string}.png",
+        filename=f"mms_n_elements_convergence_l2norm{custom_string}.png",
     )
 
 
