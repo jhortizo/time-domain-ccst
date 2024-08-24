@@ -3,6 +3,7 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import numpy as np
 from solidspy.postprocesor import complete_disp, plot_node_field
+
 from time_domain_ccst.constants import IMAGES_FOLDER
 
 
@@ -26,60 +27,34 @@ def conditional_loads_plotting(
 
 
 def conditional_fields_plotting(
-    u_fem,
-    nodes,
-    elements,
-    u_true,
+    u_fems,
+    u_trues,
+    plot_field: Literal["all", "last"],
     mesh_size,
     mesh_sizes,
-    plot_field: Literal["all", "last"],
-    solution,
-    bc_array,
-    curl_fcn,
+    n_points=3,
 ):
-    def plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn):
-        plot_node_field(
-            u_fem[:, 0],
-            nodes,
-            elements,
-            title=[
-                f"u_x FEM_{len(elements)}_elements",
-            ],
-        )
-        plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
+    def plot_fields(u_fems, u_trues, n_points):
+        random_generator = np.random.default_rng(42)
+        ids_to_plot = random_generator.choice(u_fems.shape[0], 10, replace=False)
 
-        vertex_nodes = list(set(elements[:, 3:7].flatten()))
-        sol_rotation = complete_disp(
-            bc_array[vertex_nodes, 2].reshape(-1, 1),
-            nodes[vertex_nodes],
-            solution,
-            ndof_node=1,
-        )
+        u_fem_to_plot = u_fems[ids_to_plot, :, :]
+        u_fem_to_plot = np.linalg.norm(u_fem_to_plot, axis=1)
 
-        x = nodes[vertex_nodes][:, 1]
-        y = nodes[vertex_nodes][:, 2]
-        z = sol_rotation.flatten()
+        u_true_to_plot = u_trues[ids_to_plot, :, :]
+        u_true_to_plot = np.linalg.norm(u_true_to_plot, axis=1)
 
-        fig, ax = plt.subplots()
-        # Create a contour plot
-        contour = ax.tricontourf(x, y, z, levels=50, cmap="viridis")
-        fig.colorbar(contour, ax=ax)
-        plt.title("W")
-        plt.show()
+        plt.figure()
+        plt.plot(u_fem_to_plot.T, 'b', label="FEM")
+        plt.plot(u_true_to_plot.T, 'k--', label="True")
+        plt.legend()
 
-        z_teo = curl_fcn(x, y)
-
-        fig, ax = plt.subplots()
-        # Create a contour plot
-        contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="viridis")
-        fig.colorbar(contour, ax=ax)
-        plt.title("W_teo")
         plt.show()
 
     if plot_field == "all":
-        plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn)
+        plot_fields(u_fems, u_trues, n_points=n_points)
     elif plot_field == "last" and mesh_size == mesh_sizes[-1]:
-        plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn)
+        plot_fields(u_fems, u_trues, n_points=n_points)
 
 
 def convergence_plot(
@@ -95,7 +70,7 @@ def convergence_plot(
 
     # and then plot the results
     plt.figure()
-    plt.loglog(mesh_sizes, errors, 'o-', label=error_metric_name)
+    plt.loglog(mesh_sizes, errors, "o-", label=error_metric_name)
     # plt.loglog(n_elements, max_errors, label="Max Error")
     plt.xlabel("Mesh length")
     plt.ylabel("Error")

@@ -8,14 +8,10 @@ def manufactured_solution_null_curl_added_oscillations() -> tuple[sp.Matrix, cal
     phi = (
         (x - x**2) ** 2
         * (y - y**2) ** 2
-        * sp.sin(6 * sp.pi * x)
-        * sp.cos(6 * sp.pi * y)
         * sp.cos(sp.pi * t)
     )
     u = vector.grad(phi)
     u_2d = sp.Matrix([u[0], u[1]])
 
-    u_lambdified = sp.lambdify((x, y), u_2d, "numpy")
-    curl_u = vector.curl(u)
-    curl_lambdified = sp.lambdify((x, y), curl_u[2], "numpy")
-    return u, u_lambdified, curl_lambdified
+    u_lambdified = sp.lambdify((x, y, t), u_2d, "numpy")
+    return u, u_lambdified

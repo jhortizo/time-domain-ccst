@@ -13,7 +13,6 @@ from time_domain_ccst.constraints_loads_creators import borders_fixed
 from time_domain_ccst.cst_utils import (
     assem_op_cst_quad9_rot4,
     cst_quad9_rot4,
-    decouple_global_matrices,
     get_variables_eqs,
 )
 from time_domain_ccst.fem_solver import _load_mesh
@@ -36,7 +35,9 @@ def calculate_body_force_fcn_continuum_mechanics(u: sp.Matrix) -> sp.Matrix:
     lambda_ = E * nu / ((1 + nu) * (1 - 2 * nu))
     mu = E / (2 * (1 + nu))
 
-    ccst_operator = c_cst(u, (lambda_, mu, eta)) - rho * u.diff(t, 2)
+    ccst_operator = c_cst(u, (lambda_, mu, eta)) - rho * u.diff(
+        t, 2
+    )  # TODO check why is taking too long
 
     f = -ccst_operator.row_del(2)
     f_lambdified = sp.lambdify((x, y, t), f, "numpy")
@@ -115,12 +116,14 @@ def solve_manufactured_solution(
             bc_array, nodes, u_initial, len(elements), ndof_node=2
         )
 
+        # check the initial state is correct
+
         solutions = np.zeros((neq, n_t_iters))
         solutions[:, 0] = initial_state  # assume constant behavior in first steps
         solutions[:, 1] = initial_state
 
         eqs_u, eqs_w, eqs_s = get_variables_eqs(assem_op)
-        m_uu, k_uu, k_ww, k_us, k_ws, f_u, f_w = decouple_global_matrices_only(
+        m_uu, k_uu, k_ww, k_us, k_ws = decouple_global_matrices_only(
             mass_mat, stiff_mat, eqs_u, eqs_w, eqs_s
         )
 
@@ -132,7 +135,7 @@ def solve_manufactured_solution(
         C = k_us @ inv_A @ k_ws.T @ inv_k_ww
         for i in tqdm(range(1, n_t_iters - 1), desc="iterations"):
             # get loads for current time
-            current_time = i * dt
+            current_time = (i + 1) * dt
 
             # TODO: I could do this outside vectorized, to optimize
             loads = impose_body_force_loads(loads, nodes, body_force_fcn, current_time)
@@ -140,6 +143,7 @@ def solve_manufactured_solution(
             # approximation to eval the function weighted by the form functions
             rhs = mass_mat @ rhs
             f_u = rhs[eqs_u]
+            # f_u = np.zeros_like(f_u) # to debug
             f_w = rhs[eqs_w]
 
             u_i_1 = solutions[eqs_u, i - 1]
@@ -147,8 +151,16 @@ def solve_manufactured_solution(
 
             M = m_uu + dt**2 * (k_uu + B)
             b = dt**2 * (f_u + C @ f_w) + m_uu @ (2 * u_i - u_i_1)
+            # M = m_uu + dt**2 * (k_uu)
+            # b = dt**2 * (f_u) + m_uu @ (2 * u_i - u_i_1)
 
             solutions[eqs_u, i + 1] = spsolve(M, b)
+
+            from solidspy.postprocesor import complete_disp, plot_node_field
+            loads_field = complete_disp(bc_array, nodes, rhs, ndof_node=2)
+            plot_node_field(loads_field, nodes, elements, title=["loads_x", "loads_y "])
+            u_field = complete_disp(bc_array, nodes, solutions[:, i], ndof_node=2)
+            plot_node_field(u_field, nodes, elements, title=["u_x", "u_y "])
 
         np.savetxt(solution_file, solutions, delimiter=",")
         np.savetxt(bc_array_file, bc_array, delimiter=",")
@@ -157,11 +169,11 @@ def solve_manufactured_solution(
     else:
         bc_array = np.loadtxt(bc_array_file, delimiter=",").astype(np.int64)
         bc_array = bc_array.reshape(-1, 1) if bc_array.ndim == 1 else bc_array
-        solution = np.loadtxt(solution_file, delimiter=",")
+        solutions = np.loadtxt(solution_file, delimiter=",")
         rhs = np.loadtxt(rhs_file, delimiter=",")
         cons, elements, nodes, loads = generate_load_mesh(mesh_size, mesh_file)
 
-    return bc_array, solution, nodes, elements, rhs
+    return bc_array, solutions, nodes, elements, rhs
 
 
 def inverse_complete_disp(bc_array, nodes, sol_complete, len_elements, ndof_node=2):
