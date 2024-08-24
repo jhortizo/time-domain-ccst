@@ -28,17 +28,17 @@ warnings.filterwarnings(
 
 def run_mms():
     plot_loads = "none"
-    plot_field = "last"
+    plot_field = "all"
     force_reprocess = False
 
-    # u, u_fnc, curl_fcn = manufactured_solution_added_oscillations()
-    # custom_string = "_non_null_curl_added_oscillation_6"
+    u, u_fnc, curl_fcn = manufactured_solution_added_oscillations()
+    custom_string = "_non_null_curl_added_oscillation_6"
 
     # u, u_fnc, curl_fcn = manufactured_solution_null_curl()
     # custom_string = "_null_curl"
 
-    u, u_fnc, curl_fcn = manufactured_solution_null_curl_added_oscillations()
-    custom_string = "_null_curl_added_oscillations"
+    # u, u_fnc, curl_fcn = manufactured_solution_null_curl_added_oscillations()
+    # custom_string = "_null_curl_added_oscillations"
 
     # u, u_fnc, curl_fcn = manufactured_solution_no_oscillations()
     # custom_string = "_non_null_curl_no_oscillations"
@@ -81,6 +81,7 @@ def run_mms():
             solution,
             bc_array,
             curl_fcn,
+            image_names=f"mms_field{custom_string}",
         )
 
         solution_teo = inverse_complete_disp(
