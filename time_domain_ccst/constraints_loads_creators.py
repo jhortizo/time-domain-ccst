@@ -75,8 +75,8 @@ def cantilever_support_load(line3, cell_data, npts, load=-1):
     TODO: properly describe this, maybe add some figures to illustrate...
     """
 
-    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
-    right_border = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+    left_border = list(set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten()))
+    right_border = list(set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten()))
 
     cons = np.zeros((npts, 3), dtype=int)
     cons[left_border, :] = -1
