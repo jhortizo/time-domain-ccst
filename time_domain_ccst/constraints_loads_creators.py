@@ -84,7 +84,7 @@ def cantilever_support_load(line3, cell_data, npts, load=-1):
     loads = np.zeros((npts, 4))  # empty loads
     loads[:, 0] = np.arange(npts)  # specify nodes
 
-    loads[list(right_border), 1 + 1] = load  # force in y direction
+    loads[right_border, 1 + 1] = load * len(right_border) # force in y direction, multiplied by number of points
 
     return cons, loads
 

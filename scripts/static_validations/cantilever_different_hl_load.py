@@ -39,7 +39,7 @@ def do_stiffness_variation_plotting(
 
 def main():
     geometry_type = "rectangle"
-    force_reprocess = False
+    force_reprocess = True
     cst_model = "cst_quad9_rot4"
     constraints_loads = "cantilever_support_load"
     vertical_load = -1
@@ -61,6 +61,7 @@ def main():
 
     Kss = []
 
+    # takes about 15min in my machine
     for i in tqdm(range(len(h_l_ratios)), desc="h/l ratios"):
         Ks = []
         for L in Ls:
@@ -93,7 +94,7 @@ def main():
     I_ = h**3 / 12
     adim_stiffs = []
     for i, L in enumerate(Ls):
-        adim_stiff = Ks[:, i] * L**3 / (3 * E * I_)
+        adim_stiff = Ks[:, i] * L**3 / (3 * E * I_) / 3
         adim_stiffs.append(adim_stiff)
     do_stiffness_variation_plotting(h_l_ratios, adim_stiffs, L_names)
 
