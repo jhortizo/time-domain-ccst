@@ -3,6 +3,7 @@ Time-marching scheme is proposed for classical continuum mechanics, taking as
 initial state an eigenvector of the system, and without loads.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 from solidspy.postprocesor import complete_disp
 
@@ -11,10 +12,19 @@ from time_domain_ccst.fem_solver import retrieve_solution
 from time_domain_ccst.plotter import (
     # plot_fields_quad9_rot4,
     plot_oscillatory_movement,
+    plot_oscillatory_movement_sample_points,
     plot_oscillatory_movement_singleplot,
-    plot_oscillatory_movement_sample_points
 )
 
+black = "#000000"
+plt.rcParams["image.cmap"] = "YlGnBu_r"
+plt.rcParams["mathtext.fontset"] = "cm"
+plt.rcParams["text.color"] = black
+plt.rcParams["font.size"] = 12
+plt.rcParams["xtick.color"] = black
+plt.rcParams["ytick.color"] = black
+plt.rcParams["axes.labelcolor"] = black
+plt.rcParams["axes.edgecolor"] = black
 
 def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
     # get the indices of the bottom line nodes
