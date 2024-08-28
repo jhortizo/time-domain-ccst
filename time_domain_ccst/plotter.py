@@ -180,8 +180,6 @@ def plot_oscillatory_movement_sample_points(
     
     sample_solution_displacements = solution_displacements[sample_nodes_ids, :, :]
 
-    sample_disp_norms = np.linalg.norm(sample_solution_displacements, axis=1)
-
     plt.figure()
 
     plt.plot(t, sample_solution_displacements[:, 1, :].T)
