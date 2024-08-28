@@ -169,27 +169,77 @@ def plot_oscillatory_movement_sample_points(
 ) -> None:
     """This requires Y to be of shape (timeframe, values)"""
 
-    nodes_x = np.linspace(nodes[:, 1].min(), nodes[:, 1].max(), n_points+1)[1:]
+    nodes_x = np.linspace(nodes[:, 1].min(), nodes[:, 1].max(), n_points + 1)[1:]
 
     half_y = nodes[:, 2].max() / 2
 
     sample_nodes_coordinates = np.array([[x, half_y] for x in nodes_x])
-    sample_nodes_ids = [np.argmin(
-        np.linalg.norm(nodes[:, 1:] - sample_nodes_coordinates[i, :], axis=1), axis=0
-    ) for i in range(n_points)]
-    
+    sample_nodes_ids = [
+        np.argmin(
+            np.linalg.norm(nodes[:, 1:] - sample_nodes_coordinates[i, :], axis=1),
+            axis=0,
+        )
+        for i in range(n_points)
+    ]
+
     sample_solution_displacements = solution_displacements[sample_nodes_ids, :, :]
+    all_nodes_positions = np.zeros_like(solution_displacements)
+    normalized_displacements = solution_displacements / solution_displacements.max()
+    for i in range(all_nodes_positions.shape[2]):
+        all_nodes_positions[:, :, i] = nodes[:, 1:] + normalized_displacements[:, :, i]
 
-    plt.figure()
+    # get border nodes
+    bottom_border_nodes = np.where(nodes[:, 2] == nodes[:, 2].min())[0]
+    top_border_nodes = np.where(nodes[:, 2] == nodes[:, 2].max())[0]
+    left_border_nodes = np.where(nodes[:, 1] == nodes[:, 1].min())[0]
+    right_border_nodes = np.where(nodes[:, 1] == nodes[:, 1].max())[0]
+    # organize borders so a line plot is organized, clockwise
+    bottom_border_nodes = bottom_border_nodes[np.argsort(nodes[bottom_border_nodes, 1])]
+    right_border_nodes = right_border_nodes[np.argsort(nodes[right_border_nodes, 2])]
+    top_border_nodes = top_border_nodes[np.argsort(nodes[top_border_nodes, 1])][::-1]
+    left_border_nodes = left_border_nodes[np.argsort(nodes[left_border_nodes, 2])][::-1]
 
-    plt.plot(t, sample_solution_displacements[:, 1, :].T)
-    plt.xlabel(r"$t$")
-    plt.ylabel(r"$u_y$")
-    plt.legend([r"$x=" + f"{round(i, 1)}$" for i in nodes_x])
+    border_nodes = np.concatenate(
+        [
+            bottom_border_nodes,
+            right_border_nodes,
+            top_border_nodes,
+            left_border_nodes,
+        ]
+    )
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3))
+
+    ax1.plot(
+        all_nodes_positions[border_nodes, 0, 0],
+        all_nodes_positions[border_nodes, 1, 0],
+        "k",
+    )
+    for i in range(n_points):
+        ax1.plot(
+            all_nodes_positions[sample_nodes_ids[i], 0, 0],
+            all_nodes_positions[sample_nodes_ids[i], 1, 0],
+            "o",
+            # color=colors[i],
+        )
+    ax1.set_xlabel(r"$x$")
+    ax1.set_ylabel(r"$y$")
+    ax1.set_aspect("equal")
+    ax1.axis("off")
+
+    for i in range(n_points):
+        ax2.plot(
+            t,
+            sample_solution_displacements[i, 1, :],
+            # color=colors[i],
+            label=f"x={round(nodes_x[i], 1)}",
+        )
+    ax2.set_xlabel(r"$t$")
+    ax2.set_ylabel(r"$u_y$")
+    ax2.set_aspect("auto")
     plt.tight_layout()
 
     if savepath:
         plt.savefig(savepath, dpi=300)
-    
+
     if instant_show:
         plt.show()

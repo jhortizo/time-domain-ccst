@@ -26,6 +26,7 @@ plt.rcParams["ytick.color"] = black
 plt.rcParams["axes.labelcolor"] = black
 plt.rcParams["axes.edgecolor"] = black
 
+
 def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
     # get the indices of the bottom line nodes
     lower_border_ids = np.where(nodes[:, 2] == 0)[0]
@@ -48,7 +49,7 @@ def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
 def main():
     geometry_type = "rectangle"
     params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
-    force_reprocess = True
+    force_reprocess = False
     cst_model = "cst_quad9_rot4"
     constraints_loads = "cantilever_support"
 
@@ -76,8 +77,10 @@ def main():
         force_reprocess=force_reprocess,
     )
 
-    n_eigvec = 2
-    plot_fields_quad9_rot4(bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True)
+    n_eigvec = 0
+    plot_fields_quad9_rot4(
+        bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True
+    )
 
     # the mesh and constraints are the same, so the exact structure of the eigvecs array
     # can be used as initial state
@@ -129,7 +132,8 @@ def main():
         solution_displacements,
         nodes,
         np.linspace(0, n_t_iter * dt, n_t_iter),
-        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points.png",
+        savepath=IMAGES_FOLDER
+        + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points.png",
     )
 
 
