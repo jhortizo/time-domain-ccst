@@ -12,6 +12,7 @@ from time_domain_ccst.plotter import (
     # plot_fields_quad9_rot4,
     plot_oscillatory_movement,
     plot_oscillatory_movement_singleplot,
+    plot_oscillatory_movement_sample_points
 )
 
 
@@ -31,7 +32,7 @@ def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
 
     x_values = nodes[lower_border_ids, 1]
     Y_values = lower_border_y_displacement
-    return x_values, Y_values.transpose()
+    return x_values, Y_values.transpose(), solution_displacements
 
 
 def main():
@@ -73,7 +74,7 @@ def main():
 
     initial_state = eigvecs[:, n_eigvec]
     scenario_to_solve = "time-marching"
-    n_t_iter = 10000
+    n_t_iter = 1000
     dt = 0.1
     bc_array, solutions, nodes, _ = retrieve_solution(
         geometry_type,
@@ -86,9 +87,10 @@ def main():
         dt=dt,
         n_t_iter=n_t_iter,
         initial_state=initial_state,
+        custom_str=f"mode_{n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}",
     )
 
-    x_values, Y_values = prepare_animation_structure(
+    x_values, Y_values, solution_displacements = prepare_animation_structure(
         bc_array, nodes, solutions, n_t_iter
     )
     ts = np.linspace(0, n_t_iter * dt, n_t_iter)
@@ -98,7 +100,7 @@ def main():
         Y_values,
         n_plots=200,
         fps=10,
-        savepath=IMAGES_FOLDER + "/ccst_fixed_cantilever_mode0_implicit.gif",
+        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_mode_{n_eigvec}_implicit.gif",
     )
 
     plot_oscillatory_movement_singleplot(
@@ -109,7 +111,14 @@ def main():
         xlabel="x",
         ylabel="y",
         title="Displacement of the bottom line",
-        savepath=IMAGES_FOLDER + "/ccst_fixed_cantilever_mode0_implicit.png",
+        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_mode_{n_eigvec}_implicit.png",
+    )
+
+    plot_oscillatory_movement_sample_points(
+        solution_displacements,
+        nodes,
+        np.linspace(0, n_t_iter * dt, n_t_iter),
+        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_mode_{n_eigvec}_implicit_sample_points.png",
     )
 
 

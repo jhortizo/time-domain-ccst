@@ -157,3 +157,42 @@ def plot_oscillatory_movement(
     plt.ylabel(ylabel)
     plt.title(title)
     ani.save(savepath, fps=fps)
+
+
+def plot_oscillatory_movement_sample_points(
+    solution_displacements: np.ndarray,
+    nodes: np.ndarray,
+    t: np.ndarray,
+    n_points: int = 5,
+    savepath: Optional[str] = None,
+    instant_show: bool = False,
+) -> None:
+    """This requires Y to be of shape (timeframe, values)"""
+
+    nodes_x = np.linspace(nodes[:, 1].min(), nodes[:, 1].max(), n_points)
+    # avoid the first and take the max val
+    nodes_x = nodes_x + (nodes_x[1] - nodes_x[0]) # check this toss first and keeps tip
+
+    half_y = nodes[:, 2].max() / 2
+
+    sample_nodes_coordinates = np.array([[x, half_y] for x in nodes_x])
+    sample_nodes_ids = np.argmin(
+        np.linalg.norm(nodes[:, 1:3] - sample_nodes_coordinates, axis=1), axis=0
+    ) # check this retrieves a list of nodes, and the correct ones
+    
+    sample_solution_displacements = solution_displacements[sample_nodes_ids, :, :]
+
+    sample_disp_norms = np.linalg.norm(sample_solution_displacements, axis=1)
+
+    plt.figure()
+
+    plt.plot(t, sample_disp_norms)
+    plt.xlabel("Time")
+    plt.ylabel("Displacement")
+    plt.legend([f"Node x={round(i, 1)}" for i in nodes_x])
+
+    if savepath:
+        plt.savefig(savepath, dpi=300)
+    
+    if instant_show:
+        plt.show()
