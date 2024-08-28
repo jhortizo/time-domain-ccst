@@ -243,3 +243,50 @@ def plot_oscillatory_movement_sample_points(
 
     if instant_show:
         plt.show()
+
+    # and then it comes the animation, complete
+    n_plots = 200
+    if n_plots is None:
+        n_plots = len(t)
+
+    time_steps = np.linspace(0, len(t) - 1, n_plots, dtype=int)
+
+    fig, ax = plt.subplots()
+    ax.axis("off")
+    ax.set_aspect("equal")
+    ax.set_ylim(all_nodes_positions[:, 1, :].min(), all_nodes_positions[:, 1, :].max())
+
+    (contour,) = ax.plot(
+        all_nodes_positions[border_nodes, 0, time_steps[0]],
+        all_nodes_positions[border_nodes, 1, time_steps[0]],
+        "k",
+    )
+
+    points = []
+
+    for i in range(n_points):
+        (point,) = ax.plot(
+            all_nodes_positions[sample_nodes_ids[i], 0, time_steps[0]],
+            all_nodes_positions[sample_nodes_ids[i], 1, time_steps[0]],
+            "o",
+        )
+        points.append(point)
+
+    time_text = ax.text(0.02, 0.95, f"Time: {t[0]:.2f}", transform=ax.transAxes)
+
+    def update(frame):
+        contour.set_xdata(all_nodes_positions[border_nodes, 0, time_steps[frame]])
+        contour.set_ydata(all_nodes_positions[border_nodes, 1, time_steps[frame]])
+        time_text.set_text(f"Time: {t[time_steps[frame]]:.2f}")
+        for i in range(n_points):
+            points[i].set_xdata(
+                all_nodes_positions[sample_nodes_ids[i], 0, time_steps[frame]]
+            )
+            points[i].set_ydata(
+                all_nodes_positions[sample_nodes_ids[i], 1, time_steps[frame]]
+            )
+        return contour, *points, time_text
+
+    ani = FuncAnimation(fig, update, frames=len(time_steps), blit=True, interval=50)
+
+    ani.save("currently_here.gif", fps=10)

@@ -131,7 +131,7 @@ def main():
     plot_oscillatory_movement_sample_points(
         solution_displacements,
         nodes,
-        np.linspace(0, n_t_iter * dt, n_t_iter),
+        ts,
         savepath=IMAGES_FOLDER
         + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points.png",
     )
