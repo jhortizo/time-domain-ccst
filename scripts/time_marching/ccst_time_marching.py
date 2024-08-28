@@ -10,7 +10,7 @@ from solidspy.postprocesor import complete_disp
 from time_domain_ccst.constants import IMAGES_FOLDER
 from time_domain_ccst.fem_solver import retrieve_solution
 from time_domain_ccst.plotter import (
-    # plot_fields_quad9_rot4,
+    plot_fields_quad9_rot4,
     plot_oscillatory_movement,
     plot_oscillatory_movement_sample_points,
     plot_oscillatory_movement_singleplot,
@@ -66,7 +66,7 @@ def main():
     # first solve the eigenvalue problem and acquire an eigenstate
     scenario_to_solve = "eigenproblem"
 
-    bc_array, _, eigvecs, nodes, _ = retrieve_solution(
+    bc_array, _, eigvecs, nodes, elements = retrieve_solution(
         geometry_type,
         params,
         cst_model,
@@ -76,8 +76,8 @@ def main():
         force_reprocess=force_reprocess,
     )
 
-    n_eigvec = 0
-    # plot_fields_quad9_rot4(bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True)
+    n_eigvec = 2
+    plot_fields_quad9_rot4(bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True)
 
     # the mesh and constraints are the same, so the exact structure of the eigvecs array
     # can be used as initial state
@@ -86,6 +86,7 @@ def main():
     scenario_to_solve = "time-marching"
     n_t_iter = 1000
     dt = 0.1
+    custom_str = f"mode_{n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}"
     bc_array, solutions, nodes, _ = retrieve_solution(
         geometry_type,
         params,
@@ -97,7 +98,7 @@ def main():
         dt=dt,
         n_t_iter=n_t_iter,
         initial_state=initial_state,
-        custom_str=f"mode_{n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}",
+        custom_str=custom_str,
     )
 
     x_values, Y_values, solution_displacements = prepare_animation_structure(
@@ -110,7 +111,7 @@ def main():
         Y_values,
         n_plots=200,
         fps=10,
-        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_mode_{n_eigvec}_implicit.gif",
+        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit.gif",
     )
 
     plot_oscillatory_movement_singleplot(
@@ -121,14 +122,14 @@ def main():
         xlabel="x",
         ylabel="y",
         title="Displacement of the bottom line",
-        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_mode_{n_eigvec}_implicit.png",
+        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit.png",
     )
 
     plot_oscillatory_movement_sample_points(
         solution_displacements,
         nodes,
         np.linspace(0, n_t_iter * dt, n_t_iter),
-        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_mode_{n_eigvec}_implicit_sample_points.png",
+        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points.png",
     )
 
 
