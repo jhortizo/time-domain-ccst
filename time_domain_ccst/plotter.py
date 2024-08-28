@@ -184,7 +184,7 @@ def plot_oscillatory_movement_sample_points(
 
     plt.plot(t, sample_solution_displacements[:, 1, :].T)
     plt.xlabel(r"$t$")
-    plt.ylabel(r"$||\mathbf{u}||$")
+    plt.ylabel(r"$u_y$")
     plt.legend([r"$x=" + f"{round(i, 1)}$" for i in nodes_x])
     plt.tight_layout()
 
