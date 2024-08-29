@@ -3,7 +3,7 @@ Contains all the functions to do pretty plots
 """
 
 import warnings
-from typing import Optional
+from typing import Optional, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -171,7 +171,6 @@ def plot_oscillatory_movement_sample_points_complete_animation(
     custom_str: Optional[str] = None,
     instant_show: bool = False,
 ) -> None:
-
     nodes_x = np.linspace(nodes[:, 1].min(), nodes[:, 1].max(), n_points + 1)[1:]
 
     half_y = nodes[:, 2].max() / 2
@@ -297,5 +296,289 @@ def plot_oscillatory_movement_sample_points_complete_animation(
 
     ani.save(
         IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit_complete.gif",
+        fps=fps,
+    )
+
+
+def plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
+    ccst_solution_displacements: np.ndarray,
+    classical_solution_displacements: np.ndarray,
+    nodes: np.ndarray,
+    t: np.ndarray,
+    n_points: int = 5,
+    fps: int = 10,
+    n_plots: int | None = None,
+    custom_str: Optional[str] = None,
+    instant_show: bool = False,
+    static_field_to_plot: Literal["x", "y", "norm"] = "y",
+) -> None:
+    nodes_x = np.linspace(nodes[:, 1].min(), nodes[:, 1].max(), n_points + 1)[1:]
+
+    half_y = nodes[:, 2].max() / 2
+
+    sample_nodes_coordinates = np.array([[x, half_y] for x in nodes_x])
+    sample_nodes_ids = [
+        np.argmin(
+            np.linalg.norm(nodes[:, 1:] - sample_nodes_coordinates[i, :], axis=1),
+            axis=0,
+        )
+        for i in range(n_points)
+    ]
+
+    sample_solution_displacements_ccst = ccst_solution_displacements[
+        sample_nodes_ids, :, :
+    ]
+    sample_solution_displacements_classical = classical_solution_displacements[
+        sample_nodes_ids, :, :
+    ]
+    all_nodes_positions_ccst = np.zeros_like(ccst_solution_displacements)
+    all_nodes_positions_classical = np.zeros_like(classical_solution_displacements)
+    normalized_displacements_ccst = (
+        ccst_solution_displacements / np.abs(ccst_solution_displacements).max()
+    )
+    normalized_displacements_classical = (
+        classical_solution_displacements
+        / np.abs(classical_solution_displacements).max()
+    )
+    for i in range(all_nodes_positions_ccst.shape[2]):
+        all_nodes_positions_ccst[:, :, i] = (
+            nodes[:, 1:] + normalized_displacements_ccst[:, :, i]
+        )
+        all_nodes_positions_classical[:, :, i] = (
+            nodes[:, 1:] + normalized_displacements_classical[:, :, i]
+        )
+
+    # get border nodes
+    bottom_border_nodes = np.where(nodes[:, 2] == nodes[:, 2].min())[0]
+    top_border_nodes = np.where(nodes[:, 2] == nodes[:, 2].max())[0]
+    left_border_nodes = np.where(nodes[:, 1] == nodes[:, 1].min())[0]
+    right_border_nodes = np.where(nodes[:, 1] == nodes[:, 1].max())[0]
+
+    # organize borders so a line plot is organized, clockwise
+    bottom_border_nodes = bottom_border_nodes[np.argsort(nodes[bottom_border_nodes, 1])]
+    right_border_nodes = right_border_nodes[np.argsort(nodes[right_border_nodes, 2])]
+    top_border_nodes = top_border_nodes[np.argsort(nodes[top_border_nodes, 1])][::-1]
+    left_border_nodes = left_border_nodes[np.argsort(nodes[left_border_nodes, 2])][::-1]
+
+    border_nodes = np.concatenate(
+        [
+            bottom_border_nodes,
+            right_border_nodes,
+            top_border_nodes,
+            left_border_nodes,
+        ]
+    )
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3))
+
+    ax1.plot(
+        all_nodes_positions_ccst[border_nodes, 0, 0],
+        all_nodes_positions_ccst[border_nodes, 1, 0],
+        "k",
+    )
+    ax1.plot(
+        all_nodes_positions_classical[border_nodes, 0, 0],
+        all_nodes_positions_classical[border_nodes, 1, 0],
+        color="gray",
+        linestyle="--",
+    )
+
+    colors = [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+        "#bcbd22",
+        "#17becf",
+    ]
+    for i in range(n_points):
+        ax1.plot(
+            all_nodes_positions_ccst[sample_nodes_ids[i], 0, 0],
+            all_nodes_positions_ccst[sample_nodes_ids[i], 1, 0],
+            "o",
+            color=colors[i],
+        )
+        ax1.plot(
+            all_nodes_positions_classical[sample_nodes_ids[i], 0, 0],
+            all_nodes_positions_classical[sample_nodes_ids[i], 1, 0],
+            "d",
+            color=colors[i],
+        )
+    ax1.set_xlabel(r"$x$")
+    ax1.set_ylabel(r"$y$")
+    ax1.set_aspect("equal")
+    ax1.axis("off")
+
+    for i in range(n_points):
+        if static_field_to_plot == "y":
+            ax2.plot(
+                t,
+                sample_solution_displacements_ccst[i, 1, :],
+                label=f"x={round(nodes_x[i], 1)}",
+                color=colors[i],
+            )
+            ax2.plot(
+                t,
+                sample_solution_displacements_classical[i, 1, :],
+                "--",
+                color=colors[i],
+            )
+        elif static_field_to_plot == "x":
+            ax2.plot(
+                t,
+                sample_solution_displacements_ccst[i, 0, :],
+                label=f"x={round(nodes_x[i], 1)}",
+                color=colors[i],
+            )
+            ax2.plot(
+                t,
+                sample_solution_displacements_classical[i, 0, :],
+                "--",
+                color=colors[i],
+            )
+        elif static_field_to_plot == "norm":
+            ax2.plot(
+                t,
+                np.linalg.norm(sample_solution_displacements_ccst[i, :, :], axis=0),
+                label=f"x={round(nodes_x[i], 1)}",
+                color=colors[i],
+            )
+            ax2.plot(
+                t,
+                np.linalg.norm(
+                    sample_solution_displacements_classical[i, :, :], axis=0
+                ),
+                "--",
+                color=colors[i],
+            )
+    ax2.set_xlabel(r"$t$")
+    if static_field_to_plot == "norm":
+        ax2.set_ylabel(r"$||u||$")
+    elif static_field_to_plot == "x":
+        ax2.set_ylabel(r"$u_x$")
+    elif static_field_to_plot == "y":
+        ax2.set_ylabel(r"$u_y$")
+    ax2.set_aspect("auto")
+    plt.tight_layout()
+
+    if custom_str:
+        plt.savefig(
+            IMAGES_FOLDER
+            + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points_vs_classical_{static_field_to_plot}.png",
+            dpi=300,
+        )
+
+    if instant_show:
+        plt.show()
+
+    # and then it comes the animation, complete
+    if n_plots is None:
+        n_plots = len(t)
+
+    time_steps = np.linspace(0, len(t) - 1, n_plots, dtype=int)
+
+    fig, ax = plt.subplots()
+    ax.axis("off")
+    ax.set_aspect("equal")
+
+    overall_min_y = min(
+        all_nodes_positions_ccst[:, 1, :].min(),
+        all_nodes_positions_classical[:, 1, :].min(),
+    )
+
+    overall_max_y = max(
+        all_nodes_positions_ccst[:, 1, :].max(),
+        all_nodes_positions_classical[:, 1, :].max(),
+    )
+
+    overall_min_x = min(
+        all_nodes_positions_ccst[:, 0, :].min(),
+        all_nodes_positions_classical[:, 0, :].min(),
+    )
+
+    overall_max_x = max(
+        all_nodes_positions_ccst[:, 0, :].max(),
+        all_nodes_positions_classical[:, 0, :].max(),
+    )
+
+    ax.set_ylim(overall_min_y, overall_max_y)
+    ax.set_xlim(overall_min_x, overall_max_x)
+
+    (contour_ccst,) = ax.plot(
+        all_nodes_positions_ccst[border_nodes, 0, time_steps[0]],
+        all_nodes_positions_ccst[border_nodes, 1, time_steps[0]],
+        "k",
+    )
+    (contour_classical,) = ax.plot(
+        all_nodes_positions_classical[border_nodes, 0, time_steps[0]],
+        all_nodes_positions_classical[border_nodes, 1, time_steps[0]],
+        color="gray",
+        linestyle="--",
+    )
+
+    points_ccst = []
+    points_classical = []
+
+    for i in range(n_points):
+        (point_ccst,) = ax.plot(
+            all_nodes_positions_ccst[sample_nodes_ids[i], 0, time_steps[0]],
+            all_nodes_positions_ccst[sample_nodes_ids[i], 1, time_steps[0]],
+            "o",
+            color=colors[i],
+        )
+        (point_classical,) = ax.plot(
+            all_nodes_positions_classical[sample_nodes_ids[i], 0, time_steps[0]],
+            all_nodes_positions_classical[sample_nodes_ids[i], 1, time_steps[0]],
+            "d",
+            color=colors[i],
+        )
+        points_ccst.append(point_ccst)
+        points_classical.append(point_classical)
+
+    time_text = ax.text(0.02, 1, f"Time: {t[0]:.2f}", transform=ax.transAxes)
+
+    def update(frame):
+        contour_ccst.set_xdata(
+            all_nodes_positions_ccst[border_nodes, 0, time_steps[frame]]
+        )
+        contour_ccst.set_ydata(
+            all_nodes_positions_ccst[border_nodes, 1, time_steps[frame]]
+        )
+        contour_classical.set_xdata(
+            all_nodes_positions_classical[border_nodes, 0, time_steps[frame]]
+        )
+        contour_classical.set_ydata(
+            all_nodes_positions_classical[border_nodes, 1, time_steps[frame]]
+        )
+        time_text.set_text(f"Time: {t[time_steps[frame]]:.2f}")
+        for i in range(n_points):
+            points_ccst[i].set_xdata(
+                all_nodes_positions_ccst[sample_nodes_ids[i], 0, time_steps[frame]]
+            )
+            points_ccst[i].set_ydata(
+                all_nodes_positions_ccst[sample_nodes_ids[i], 1, time_steps[frame]]
+            )
+            points_classical[i].set_xdata(
+                all_nodes_positions_classical[sample_nodes_ids[i], 0, time_steps[frame]]
+            )
+            points_classical[i].set_ydata(
+                all_nodes_positions_classical[sample_nodes_ids[i], 1, time_steps[frame]]
+            )
+        return (
+            contour_ccst,
+            contour_classical,
+            *points_ccst,
+            *points_classical,
+            time_text,
+        )
+
+    ani = FuncAnimation(fig, update, frames=len(time_steps), blit=True, interval=50)
+
+    ani.save(
+        IMAGES_FOLDER
+        + f"/ccst_fixed_cantilever_{custom_str}_implicit_complete_vs_classical.gif",
         fps=fps,
     )
