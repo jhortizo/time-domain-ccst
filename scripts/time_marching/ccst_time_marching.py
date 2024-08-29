@@ -12,7 +12,7 @@ from time_domain_ccst.fem_solver import retrieve_solution
 from time_domain_ccst.plotter import (
     plot_fields_quad9_rot4,
     plot_oscillatory_movement,
-    plot_oscillatory_movement_sample_points,
+    plot_oscillatory_movement_sample_points_complete_animation,
     plot_oscillatory_movement_singleplot,
 )
 
@@ -128,12 +128,8 @@ def main():
         savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit.png",
     )
 
-    plot_oscillatory_movement_sample_points(
-        solution_displacements,
-        nodes,
-        ts,
-        savepath=IMAGES_FOLDER
-        + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points.png",
+    plot_oscillatory_movement_sample_points_complete_animation(
+        solution_displacements, nodes, ts, custom_str=custom_str, n_plots=200, fps=10
     )
 
 

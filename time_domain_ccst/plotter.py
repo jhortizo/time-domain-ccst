@@ -10,6 +10,8 @@ import numpy as np
 import solidspy.postprocesor as pos
 from matplotlib.animation import FuncAnimation
 
+from .constants import IMAGES_FOLDER
+
 warnings.filterwarnings(
     "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
 )  # ignore unimportant warning from solidspy
@@ -159,15 +161,16 @@ def plot_oscillatory_movement(
     ani.save(savepath, fps=fps)
 
 
-def plot_oscillatory_movement_sample_points(
+def plot_oscillatory_movement_sample_points_complete_animation(
     solution_displacements: np.ndarray,
     nodes: np.ndarray,
     t: np.ndarray,
     n_points: int = 5,
-    savepath: Optional[str] = None,
+    fps: int = 10,
+    n_plots: int | None = None,
+    custom_str: Optional[str] = None,
     instant_show: bool = False,
 ) -> None:
-    """This requires Y to be of shape (timeframe, values)"""
 
     nodes_x = np.linspace(nodes[:, 1].min(), nodes[:, 1].max(), n_points + 1)[1:]
 
@@ -193,6 +196,7 @@ def plot_oscillatory_movement_sample_points(
     top_border_nodes = np.where(nodes[:, 2] == nodes[:, 2].max())[0]
     left_border_nodes = np.where(nodes[:, 1] == nodes[:, 1].min())[0]
     right_border_nodes = np.where(nodes[:, 1] == nodes[:, 1].max())[0]
+
     # organize borders so a line plot is organized, clockwise
     bottom_border_nodes = bottom_border_nodes[np.argsort(nodes[bottom_border_nodes, 1])]
     right_border_nodes = right_border_nodes[np.argsort(nodes[right_border_nodes, 2])]
@@ -219,7 +223,6 @@ def plot_oscillatory_movement_sample_points(
             all_nodes_positions[sample_nodes_ids[i], 0, 0],
             all_nodes_positions[sample_nodes_ids[i], 1, 0],
             "o",
-            # color=colors[i],
         )
     ax1.set_xlabel(r"$x$")
     ax1.set_ylabel(r"$y$")
@@ -230,7 +233,6 @@ def plot_oscillatory_movement_sample_points(
         ax2.plot(
             t,
             sample_solution_displacements[i, 1, :],
-            # color=colors[i],
             label=f"x={round(nodes_x[i], 1)}",
         )
     ax2.set_xlabel(r"$t$")
@@ -238,14 +240,17 @@ def plot_oscillatory_movement_sample_points(
     ax2.set_aspect("auto")
     plt.tight_layout()
 
-    if savepath:
-        plt.savefig(savepath, dpi=300)
+    if custom_str:
+        plt.savefig(
+            IMAGES_FOLDER
+            + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points.png",
+            dpi=300,
+        )
 
     if instant_show:
         plt.show()
 
     # and then it comes the animation, complete
-    n_plots = 200
     if n_plots is None:
         n_plots = len(t)
 
@@ -289,4 +294,7 @@ def plot_oscillatory_movement_sample_points(
 
     ani = FuncAnimation(fig, update, frames=len(time_steps), blit=True, interval=50)
 
-    ani.save("currently_here.gif", fps=10)
+    ani.save(
+        IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit_complete.gif",
+        fps=fps,
+    )
