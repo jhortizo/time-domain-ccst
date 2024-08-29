@@ -260,6 +260,7 @@ def plot_oscillatory_movement_sample_points_complete_animation(
     ax.axis("off")
     ax.set_aspect("equal")
     ax.set_ylim(all_nodes_positions[:, 1, :].min(), all_nodes_positions[:, 1, :].max())
+    ax.set_xlim(all_nodes_positions[:, 0, :].min(), all_nodes_positions[:, 0, :].max())
 
     (contour,) = ax.plot(
         all_nodes_positions[border_nodes, 0, time_steps[0]],
@@ -277,7 +278,7 @@ def plot_oscillatory_movement_sample_points_complete_animation(
         )
         points.append(point)
 
-    time_text = ax.text(0.02, 0.95, f"Time: {t[0]:.2f}", transform=ax.transAxes)
+    time_text = ax.text(0.02, 1, f"Time: {t[0]:.2f}", transform=ax.transAxes)
 
     def update(frame):
         contour.set_xdata(all_nodes_positions[border_nodes, 0, time_steps[frame]])
