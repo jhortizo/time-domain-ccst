@@ -145,7 +145,7 @@ def _compute_solution(
         solutions[:, 0] = initial_state  # assume constant behavior in first steps
         solutions[:, 1] = initial_state
         if cst_model == "classical_quad9":
-            for i in range(1, n_t_iters - 1):
+            for i in tqdm(range(1, n_t_iters - 1), desc="iterations"):
                 A = mass_mat + dt**2 * stiff_mat
                 b = (
                     dt**2 * rhs
