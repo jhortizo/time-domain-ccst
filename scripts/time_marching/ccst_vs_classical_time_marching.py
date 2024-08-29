@@ -98,16 +98,14 @@ def main():
         force_reprocess=force_reprocess,
     )
 
-    classical_bc_array, _, classical_eigvecs, nodes, elements = (
-        retrieve_solution(
-            geometry_type,
-            params,
-            classical_model,
-            classical_constraints_loads,
-            classical_materials,
-            scenario_to_solve="eigenproblem",
-            force_reprocess=force_reprocess,
-        )
+    classical_bc_array, _, classical_eigvecs, nodes, elements = retrieve_solution(
+        geometry_type,
+        params,
+        classical_model,
+        classical_constraints_loads,
+        classical_materials,
+        scenario_to_solve="eigenproblem",
+        force_reprocess=force_reprocess,
     )
 
     ccst_eigvecs_u = np.array(
@@ -127,8 +125,8 @@ def main():
         ]
     )
     print("Number of elements:", len(elements))
-    ccst_n_eigvec = 2
-    static_field_to_plot = "norm"
+    ccst_n_eigvec = 3
+    static_field_to_plot = "y"
     list_closer = find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u)
     classical_n_eigvec = list_closer[ccst_n_eigvec][1]
 
@@ -154,7 +152,9 @@ def main():
 
     n_t_iter = 1000
     dt = 0.5
-    custom_str = f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}"
+    custom_str = (
+        f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}"
+    )
 
     ccst_bc_array, ccst_solutions, nodes, _ = retrieve_solution(
         geometry_type,
@@ -200,7 +200,8 @@ def main():
         nodes,
         ts,
         custom_str=custom_str,
-        n_plots=200,
+        n_plots=1000,
+        n_points=3,
         fps=10,
         static_field_to_plot=static_field_to_plot,
     )
