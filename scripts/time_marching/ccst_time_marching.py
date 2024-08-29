@@ -76,8 +76,8 @@ def main():
         scenario_to_solve="eigenproblem",
         force_reprocess=force_reprocess,
     )
-
-    n_eigvec = 0
+    print("Number of elements:", len(elements))
+    n_eigvec = 2
     plot_fields_quad9_rot4(
         bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True
     )
