@@ -9,7 +9,7 @@ from time_domain_ccst.mms_t.plots import (
     convergence_plot,
 )
 from time_domain_ccst.mms_t.proposed_solutions import (
-    manufactured_solution_null_curl_added_oscillations,
+    manufactured_solution_no_oscillations,
 )
 from time_domain_ccst.mms_t.utils import (
     calculate_body_force_fcn_continuum_mechanics,
@@ -25,13 +25,13 @@ def run_mms():
     plot_field = "all"
     force_reprocess = True
 
-    u, u_fcn = manufactured_solution_null_curl_added_oscillations()
-    custom_string = "_null_curl_added_oscillations"
+    u, u_fcn = manufactured_solution_no_oscillations()
+    custom_string = "_non_null_curl_no_oscillations"
 
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
     # mesh_sizes = np.logspace(0, -2, num=5)[1:]
-    mesh_sizes = [0.1]
+    mesh_sizes = [0.5]
     # dts = [0.01, 0.005, 0.0025, 0.00125, 0.000625][1: ]
     dts = [0.01]
     final_time = 0.5
@@ -55,11 +55,13 @@ def run_mms():
         # correctly reorder array from (2, 1, nnodes, times) to (nnodes, 2, times)
         u_trues = u_fcn(nodes[:, 1], nodes[:, 2], time_array[:, np.newaxis])
         u_trues = np.squeeze(u_trues)
-        u_trues = np.transpose(u_trues, (2, 0, 1)) 
+        u_trues = np.transpose(u_trues, (2, 0, 1))
 
         u_fems = np.zeros_like(u_trues)
         for j in range(len(time_array)):
-            u_fems[:, :, j] = complete_disp(bc_array, nodes, solutions[:, j], ndof_node=2)
+            u_fems[:, :, j] = complete_disp(
+                bc_array, nodes, solutions[:, j], ndof_node=2
+            )
 
         assert np.allclose(u_fems[:, :, 0], u_trues[:, :, 0])
         assert np.allclose(u_fems[:, :, 1], u_trues[:, :, 0])
@@ -77,12 +79,12 @@ def run_mms():
         rms_error = np.sqrt(np.mean((u_trues - u_fems) ** 2))
         rms_errors.append(rms_error)
 
-    # convergence_plot(
-    #     mesh_sizes,
-    #     rms_errors,
-    #     error_metric_name="Error RMS",
-    #     filename=f"mms_t_convergence_RMS{custom_string}.png",
-    # )
+    convergence_plot(
+        mesh_sizes,
+        rms_errors,
+        error_metric_name="Error RMS",
+        filename=f"mms_t_convergence_RMS{custom_string}.png",
+    )
 
 
 if __name__ == "__main__":
