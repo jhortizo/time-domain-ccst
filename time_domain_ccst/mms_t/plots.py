@@ -47,7 +47,7 @@ def conditional_fields_plotting(
         plt.figure()
         plt.plot(u_fem_to_plot.T, 'b', label="FEM")
         plt.plot(u_true_to_plot.T, 'k--', label="True")
-        plt.legend()
+        # plt.legend()
 
         plt.show()
 
