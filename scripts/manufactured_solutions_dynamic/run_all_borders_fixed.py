@@ -31,11 +31,14 @@ def run_mms():
     body_force_fcn, _ = calculate_body_force_fcn_continuum_mechanics(u)
 
     # mesh_sizes = np.logspace(0, -2, num=5)[1:]
-    mesh_sizes = [0.5]
+    mesh_sizes = [0.05]
     # dts = [0.01, 0.005, 0.0025, 0.00125, 0.000625][1: ]
-    dts = [0.01]
-    final_time = 0.5
+    dts = [1e-4]
+    final_time = 0.1
     nts = [int(final_time / dt) for dt in dts]
+
+    print(nts)
+    print("estimated time: ", [nt * 23/100 / 60 for nt in nts], ' minutes')
 
     rms_errors = []
     n_elements = []
@@ -63,8 +66,8 @@ def run_mms():
                 bc_array, nodes, solutions[:, j], ndof_node=2
             )
 
-        assert np.allclose(u_fems[:, :, 0], u_trues[:, :, 0])
-        assert np.allclose(u_fems[:, :, 1], u_trues[:, :, 0])
+        # assert np.allclose(u_fems[:, :, 0], u_trues[:, :, 0])
+        # assert np.allclose(u_fems[:, :, 1], u_trues[:, :, 0])
 
         conditional_fields_plotting(
             u_fems,

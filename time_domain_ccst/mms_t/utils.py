@@ -27,7 +27,7 @@ x, y, t = sp.symbols("x y t")
 E = 1
 nu = 0.3
 rho = 1
-eta = 1
+eta = 1e-5
 omega = 1
 
 
@@ -89,6 +89,8 @@ def solve_manufactured_solution(
 
     # TODO: this is being redone over and over again, consider refactoring this as well
     cons, elements, nodes, loads = generate_load_mesh(mesh_size, mesh_file)
+    print("Mesh size:", len(elements), " elements")
+
 
     if (
         not all([os.path.exists(this_file) for this_file in files_list])
@@ -156,11 +158,11 @@ def solve_manufactured_solution(
 
             solutions[eqs_u, i + 1] = spsolve(M, b)
 
-            from solidspy.postprocesor import complete_disp, plot_node_field
-            loads_field = complete_disp(bc_array, nodes, rhs, ndof_node=2)
-            plot_node_field(loads_field, nodes, elements, title=["loads_x", "loads_y "])
-            u_field = complete_disp(bc_array, nodes, solutions[:, i], ndof_node=2)
-            plot_node_field(u_field, nodes, elements, title=["u_x", "u_y "])
+            # from solidspy.postprocesor import complete_disp, plot_node_field
+            # # loads_field = complete_disp(bc_array, nodes, rhs, ndof_node=2)
+            # # plot_node_field(loads_field, nodes, elements, title=["loads_x", "loads_y "])
+            # u_field = complete_disp(bc_array, nodes, solutions[:, i], ndof_node=2)
+            # plot_node_field(u_field, nodes, elements, title=["u_x", "u_y "])
 
         np.savetxt(solution_file, solutions, delimiter=",")
         np.savetxt(bc_array_file, bc_array, delimiter=",")
