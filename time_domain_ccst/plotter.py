@@ -186,7 +186,7 @@ def plot_oscillatory_movement_sample_points_complete_animation(
 
     sample_solution_displacements = solution_displacements[sample_nodes_ids, :, :]
     all_nodes_positions = np.zeros_like(solution_displacements)
-    normalized_displacements = solution_displacements / solution_displacements.max()
+    normalized_displacements = 0.5 * solution_displacements / np.abs(solution_displacements).max()
     for i in range(all_nodes_positions.shape[2]):
         all_nodes_positions[:, :, i] = nodes[:, 1:] + normalized_displacements[:, :, i]
 

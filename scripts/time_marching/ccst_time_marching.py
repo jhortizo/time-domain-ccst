@@ -48,7 +48,7 @@ def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
 
 def main():
     geometry_type = "rectangle"
-    params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
+    params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 0.5}
     force_reprocess = False
     cst_model = "cst_quad9_rot4"
     constraints_loads = "cantilever_support"
@@ -77,7 +77,7 @@ def main():
         force_reprocess=force_reprocess,
     )
     print("Number of elements:", len(elements))
-    n_eigvec = 2
+    n_eigvec = 11
     plot_fields_quad9_rot4(
         bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True
     )
@@ -88,7 +88,7 @@ def main():
     initial_state = eigvecs[:, n_eigvec]
     scenario_to_solve = "time-marching"
     n_t_iter = 1000
-    dt = 0.1
+    dt = 0.01
     custom_str = f"mode_{n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}"
     bc_array, solutions, nodes, _ = retrieve_solution(
         geometry_type,
