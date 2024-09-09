@@ -16,15 +16,8 @@ from time_domain_ccst.plotter import (
     plot_oscillatory_movement_singleplot,
 )
 
-black = "#000000"
 plt.rcParams["image.cmap"] = "YlGnBu_r"
 plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams["text.color"] = black
-plt.rcParams["font.size"] = 12
-plt.rcParams["xtick.color"] = black
-plt.rcParams["ytick.color"] = black
-plt.rcParams["axes.labelcolor"] = black
-plt.rcParams["axes.edgecolor"] = black
 
 
 def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
@@ -108,25 +101,25 @@ def main():
         bc_array, nodes, solutions, n_t_iter
     )
     ts = np.linspace(0, n_t_iter * dt, n_t_iter)
-    plot_oscillatory_movement(
-        x_values,
-        ts,
-        Y_values,
-        n_plots=200,
-        fps=10,
-        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit.gif",
-    )
+    # plot_oscillatory_movement(
+    #     x_values,
+    #     ts,
+    #     Y_values,
+    #     n_plots=200,
+    #     fps=10,
+    #     savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit.gif",
+    # )
 
-    plot_oscillatory_movement_singleplot(
-        x_values,
-        ts[:2000],
-        Y_values[:2000, :],
-        n_plots=20,
-        xlabel="x",
-        ylabel="y",
-        title="Displacement of the bottom line",
-        savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit.png",
-    )
+    # plot_oscillatory_movement_singleplot(
+    #     x_values,
+    #     ts[:2000],
+    #     Y_values[:2000, :],
+    #     n_plots=20,
+    #     xlabel="x",
+    #     ylabel="y",
+    #     title="Displacement of the bottom line",
+    #     savepath=IMAGES_FOLDER + f"/ccst_fixed_cantilever_{custom_str}_implicit.png",
+    # )
 
     plot_oscillatory_movement_sample_points_complete_animation(
         solution_displacements, nodes, ts, custom_str=custom_str, n_plots=200, fps=10

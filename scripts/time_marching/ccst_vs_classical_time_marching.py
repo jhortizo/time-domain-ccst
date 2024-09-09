@@ -14,15 +14,8 @@ from time_domain_ccst.plotter import (
     plot_oscillatory_movement_sample_points_complete_animation_vs_classical,
 )
 
-black = "#000000"
 plt.rcParams["image.cmap"] = "YlGnBu_r"
 plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams["text.color"] = black
-plt.rcParams["font.size"] = 12
-plt.rcParams["xtick.color"] = black
-plt.rcParams["ytick.color"] = black
-plt.rcParams["axes.labelcolor"] = black
-plt.rcParams["axes.edgecolor"] = black
 
 
 def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
@@ -125,8 +118,18 @@ def main():
         ]
     )
     print("Number of elements:", len(elements))
+
+    # different cases run in this script
+    # ccst_n_eigvec = 0
+    # static_field_to_plot = "y"
+    # dt = 0.5
+    # ccst_n_eigvec = 2
+    # static_field_to_plot = "norm"
+    # dt = 0.05
     ccst_n_eigvec = 3
     static_field_to_plot = "y"
+    dt = 0.05
+
     list_closer = find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u)
     classical_n_eigvec = list_closer[ccst_n_eigvec][1]
 
@@ -151,7 +154,6 @@ def main():
     scenario_to_solve = "time-marching"
 
     n_t_iter = 1000
-    dt = 0.5
     custom_str = (
         f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}"
     )
@@ -200,7 +202,7 @@ def main():
         nodes,
         ts,
         custom_str=custom_str,
-        n_plots=1000,
+        n_plots=200,
         n_points=3,
         fps=10,
         static_field_to_plot=static_field_to_plot,

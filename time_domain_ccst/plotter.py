@@ -11,6 +11,9 @@ import solidspy.postprocesor as pos
 from matplotlib.animation import FuncAnimation
 
 from .constants import IMAGES_FOLDER
+from matplotlib.gridspec import GridSpec
+
+plt.style.use("cst_paper.mplstyle")
 
 warnings.filterwarnings(
     "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning
@@ -165,7 +168,7 @@ def plot_oscillatory_movement_sample_points_complete_animation(
     solution_displacements: np.ndarray,
     nodes: np.ndarray,
     t: np.ndarray,
-    n_points: int = 5,
+    n_points: int = 3,
     fps: int = 10,
     n_plots: int | None = None,
     custom_str: Optional[str] = None,
@@ -186,7 +189,9 @@ def plot_oscillatory_movement_sample_points_complete_animation(
 
     sample_solution_displacements = solution_displacements[sample_nodes_ids, :, :]
     all_nodes_positions = np.zeros_like(solution_displacements)
-    normalized_displacements = 0.5 * solution_displacements / np.abs(solution_displacements).max()
+    normalized_displacements = (
+        0.5 * solution_displacements / np.abs(solution_displacements).max()
+    )
     for i in range(all_nodes_positions.shape[2]):
         all_nodes_positions[:, :, i] = nodes[:, 1:] + normalized_displacements[:, :, i]
 
@@ -210,33 +215,52 @@ def plot_oscillatory_movement_sample_points_complete_animation(
             left_border_nodes,
         ]
     )
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3))
 
+    fig = plt.figure(layout="constrained", figsize=(8, 3))
+    gs = GridSpec(3, 2, figure=fig)
+    ax1 = fig.add_subplot(gs[:, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax3 = fig.add_subplot(gs[1, 1], sharex=ax2)
+    ax4 = fig.add_subplot(gs[2, 1], sharex=ax2)
+
+    axs = [ax2, ax3, ax4]
     ax1.plot(
         all_nodes_positions[border_nodes, 0, 0],
         all_nodes_positions[border_nodes, 1, 0],
-        "k",
+        "gray",
     )
+
     for i in range(n_points):
         ax1.plot(
             all_nodes_positions[sample_nodes_ids[i], 0, 0],
             all_nodes_positions[sample_nodes_ids[i], 1, 0],
             "o",
+            color="black",
         )
+
     ax1.set_xlabel(r"$x$")
     ax1.set_ylabel(r"$y$")
     ax1.set_aspect("equal")
     ax1.axis("off")
 
     for i in range(n_points):
-        ax2.plot(
+        yvals = sample_solution_displacements[i, 1, :]
+
+        axs[i].set_ylabel(r"$u_y$")
+
+        axs[i].plot(
             t,
-            sample_solution_displacements[i, 1, :],
+            yvals,
             label=f"x={round(nodes_x[i], 1)}",
+            color="black",
         )
-    ax2.set_xlabel(r"$t$")
-    ax2.set_ylabel(r"$u_y$")
-    ax2.set_aspect("auto")
+
+        axs[i].xaxis.set_visible(False)
+        axs[i].set_aspect("auto")
+        axs[i].set_yticks([])
+
+    ax4.xaxis.set_visible(True)
+    ax4.set_xlabel(r"$t$")
     plt.tight_layout()
 
     if custom_str:
@@ -274,6 +298,7 @@ def plot_oscillatory_movement_sample_points_complete_animation(
             all_nodes_positions[sample_nodes_ids[i], 0, time_steps[0]],
             all_nodes_positions[sample_nodes_ids[i], 1, time_steps[0]],
             "o",
+            color="black",
         )
         points.append(point)
 
@@ -368,44 +393,39 @@ def plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
             left_border_nodes,
         ]
     )
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3))
 
+    fig = plt.figure(layout="constrained", figsize=(8, 3))
+    gs = GridSpec(3, 2, figure=fig)
+    ax1 = fig.add_subplot(gs[:, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax3 = fig.add_subplot(gs[1, 1], sharex=ax2)
+    ax4 = fig.add_subplot(gs[2, 1], sharex=ax2)
+
+    axs = [ax2, ax3, ax4]
     ax1.plot(
         all_nodes_positions_ccst[border_nodes, 0, 0],
         all_nodes_positions_ccst[border_nodes, 1, 0],
-        "k",
+        "gray",
     )
     ax1.plot(
         all_nodes_positions_classical[border_nodes, 0, 0],
         all_nodes_positions_classical[border_nodes, 1, 0],
-        color="gray",
-        linestyle="--",
+        color="black",
+        linestyle=":",
     )
 
-    colors = [
-        "#1f77b4",
-        "#ff7f0e",
-        "#2ca02c",
-        "#d62728",
-        "#9467bd",
-        "#8c564b",
-        "#e377c2",
-        "#7f7f7f",
-        "#bcbd22",
-        "#17becf",
-    ]
     for i in range(n_points):
         ax1.plot(
             all_nodes_positions_ccst[sample_nodes_ids[i], 0, 0],
             all_nodes_positions_ccst[sample_nodes_ids[i], 1, 0],
             "o",
-            color=colors[i],
+            color="black",
         )
         ax1.plot(
             all_nodes_positions_classical[sample_nodes_ids[i], 0, 0],
             all_nodes_positions_classical[sample_nodes_ids[i], 1, 0],
             "d",
-            color=colors[i],
+            color="black",
         )
     ax1.set_xlabel(r"$x$")
     ax1.set_ylabel(r"$y$")
@@ -414,54 +434,41 @@ def plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
 
     for i in range(n_points):
         if static_field_to_plot == "y":
-            ax2.plot(
-                t,
-                sample_solution_displacements_ccst[i, 1, :],
-                label=f"x={round(nodes_x[i], 1)}",
-                color=colors[i],
-            )
-            ax2.plot(
-                t,
-                sample_solution_displacements_classical[i, 1, :],
-                "--",
-                color=colors[i],
-            )
+            yvals_ccst = sample_solution_displacements_ccst[i, 1, :]
+            yvals_classical = sample_solution_displacements_classical[i, 1, :]
+            axs[i].set_ylabel(r"$u_y$")
         elif static_field_to_plot == "x":
-            ax2.plot(
-                t,
-                sample_solution_displacements_ccst[i, 0, :],
-                label=f"x={round(nodes_x[i], 1)}",
-                color=colors[i],
-            )
-            ax2.plot(
-                t,
-                sample_solution_displacements_classical[i, 0, :],
-                "--",
-                color=colors[i],
-            )
+            yvals_ccst = sample_solution_displacements_ccst[i, 0, :]
+            yvals_classical = sample_solution_displacements_classical[i, 0, :]
+            axs[i].set_ylabel(r"$u_x$")
         elif static_field_to_plot == "norm":
-            ax2.plot(
-                t,
-                np.linalg.norm(sample_solution_displacements_ccst[i, :, :], axis=0),
-                label=f"x={round(nodes_x[i], 1)}",
-                color=colors[i],
+            yvals_ccst = np.linalg.norm(
+                sample_solution_displacements_ccst[i, :, :], axis=0
             )
-            ax2.plot(
-                t,
-                np.linalg.norm(
-                    sample_solution_displacements_classical[i, :, :], axis=0
-                ),
-                "--",
-                color=colors[i],
+            yvals_classical = np.linalg.norm(
+                sample_solution_displacements_classical[i, :, :], axis=0
             )
-    ax2.set_xlabel(r"$t$")
-    if static_field_to_plot == "norm":
-        ax2.set_ylabel(r"$||u||$")
-    elif static_field_to_plot == "x":
-        ax2.set_ylabel(r"$u_x$")
-    elif static_field_to_plot == "y":
-        ax2.set_ylabel(r"$u_y$")
-    ax2.set_aspect("auto")
+            axs[i].set_ylabel(r"$||u||$")
+
+        axs[i].plot(
+            t,
+            yvals_ccst,
+            label=f"x={round(nodes_x[i], 1)}",
+            color="black",
+        )
+        axs[i].plot(
+            t,
+            yvals_classical,
+            "--",
+            color="black",
+        )
+
+        axs[i].set_aspect("auto")
+        axs[i].xaxis.set_visible(False)
+        axs[i].set_yticks([])
+
+    ax4.xaxis.set_visible(True)
+    ax4.set_xlabel(r"$t$")
     plt.tight_layout()
 
     if custom_str:
@@ -527,13 +534,13 @@ def plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
             all_nodes_positions_ccst[sample_nodes_ids[i], 0, time_steps[0]],
             all_nodes_positions_ccst[sample_nodes_ids[i], 1, time_steps[0]],
             "o",
-            color=colors[i],
+            color="black",
         )
         (point_classical,) = ax.plot(
             all_nodes_positions_classical[sample_nodes_ids[i], 0, time_steps[0]],
             all_nodes_positions_classical[sample_nodes_ids[i], 1, time_steps[0]],
             "d",
-            color=colors[i],
+            color="black",
         )
         points_ccst.append(point_ccst)
         points_classical.append(point_classical)
