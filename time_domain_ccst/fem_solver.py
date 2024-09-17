@@ -217,7 +217,7 @@ def retrieve_solution(
         _, elements, nodes, _ = _load_mesh(
             files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params
         )
-        solution_structures = load_solutions(files_dict, scenario_to_solve)
+        solution_structures = load_solutions(files_dict, scenario_to_solve, return_matrices)
         complete_response = (*solution_structures, nodes, elements)
 
     else:
