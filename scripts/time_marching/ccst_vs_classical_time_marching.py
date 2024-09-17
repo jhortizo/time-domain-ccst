@@ -29,6 +29,7 @@ def find_initial_states(
     classical_materials,
     force_reprocess,
     ccst_n_eigvec,
+    plotting=False,
 ):
     ccst_bc_array, _, ccst_eigvecs, nodes, elements = retrieve_solution(
         geometry_type,
@@ -71,21 +72,22 @@ def find_initial_states(
     list_closer = find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u)
     classical_n_eigvec = list_closer[ccst_n_eigvec][1]
 
-    plot_fields_quad9_rot4(
-        ccst_bc_array,
-        nodes,
-        elements,
-        ccst_eigvecs[:, ccst_n_eigvec],
-        instant_show=True,
-    )
+    if plotting:
+        plot_fields_quad9_rot4(
+            ccst_bc_array,
+            nodes,
+            elements,
+            ccst_eigvecs[:, ccst_n_eigvec],
+            instant_show=True,
+        )
 
-    plot_fields_classical(
-        classical_bc_array,
-        nodes,
-        elements,
-        classical_eigvecs[:, classical_n_eigvec],
-        instant_show=True,
-    )
+        plot_fields_classical(
+            classical_bc_array,
+            nodes,
+            elements,
+            classical_eigvecs[:, classical_n_eigvec],
+            instant_show=True,
+        )
 
     ccst_initial_state = ccst_eigvecs[:, ccst_n_eigvec]
     classical_initial_state = classical_eigvecs[:, classical_n_eigvec]
@@ -123,30 +125,19 @@ def get_dynamic_solution(
         custom_str=custom_str,
     )
 
-    _, _, solution_displacements = prepare_animation_structure(
-        bc_array, nodes, solutions, n_t_iter
-    )
+    solution_displacements = get_displacements(bc_array, nodes, solutions, n_t_iter)
 
     return solution_displacements, nodes
 
 
-def prepare_animation_structure(bc_array, nodes, solutions, n_iter_t):
-    # get the indices of the bottom line nodes
-    lower_border_ids = np.where(nodes[:, 2] == 0)[0]
-
-    # calculate the displacement solution for each time step
+def get_displacements(bc_array, nodes, solutions, n_iter_t):
     solution_displacements = np.zeros((len(nodes), 2, n_iter_t))
     for i in range(n_iter_t):
         solution_displacements[:, :, i] = complete_disp(
             bc_array[:, :2], nodes, solutions[:, i], ndof_node=2
         )
 
-    # get the displacement solution for the bottom line nodes
-    lower_border_y_displacement = solution_displacements[lower_border_ids, 1, :]
-
-    x_values = nodes[lower_border_ids, 1]
-    Y_values = lower_border_y_displacement
-    return x_values, Y_values.transpose(), solution_displacements
+    return solution_displacements
 
 
 def find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u):
@@ -179,6 +170,7 @@ def main():
     geometry_type = "rectangle"
     params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
     force_reprocess = False
+    plotting = False
 
     ccst_constraints_loads = "cantilever_support"
     cst_model = "cst_quad9_rot4"
@@ -219,6 +211,7 @@ def main():
         classical_materials,
         force_reprocess,
         ccst_n_eigvec=ccst_n_eigvec,
+        plotting=plotting,
     )
 
     # -- Getting dynamic solutions
