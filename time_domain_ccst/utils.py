@@ -93,9 +93,9 @@ def load_static_solution_files(files_dict, return_matrices):
     solution = np.loadtxt(files_dict["solution"], delimiter=",")
 
     if return_matrices:
-        mass_mat = np.load(files_dict["mass_mat"])
-        stiffness_mat = np.load(files_dict["stiffness_mat"])
-        return bc_array, solution, mass_mat, stiffness_mat
+        mass_mat = sp.sparse.load_npz(files_dict["mass_mat"])
+        stiff_mat = sp.sparse.load_npz(files_dict["stiffness_mat"])
+        return bc_array, solution, mass_mat, stiff_mat
     return bc_array, solution
 
 
@@ -106,9 +106,9 @@ def load_dynamic_solution_files(files_dict, return_matrices):
     solution = np.loadtxt(files_dict["solution"], delimiter=",")
 
     if return_matrices:
-        mass_mat = np.load(files_dict["mass_mat"])
-        stiffness_mat = np.load(files_dict["stiffness_mat"])
-        return bc_array, solution, mass_mat, stiffness_mat
+        mass_mat = sp.sparse.load_npz(files_dict["mass_mat"])
+        stiff_mat = sp.sparse.load_npz(files_dict["stiffness_mat"])
+        return bc_array, solution, mass_mat, stiff_mat
     return bc_array, solution
 
 
@@ -120,9 +120,9 @@ def load_eigensolution_files(files_dict, return_matrices):
     eigvecs = np.loadtxt(files_dict["eigvecs"], delimiter=",")
 
     if return_matrices:  # TODO: this probably raises errors, because for eigenproblems the matrices are dense
-        mass_mat = np.load(files_dict["mass_mat"])
-        stiffness_mat = np.load(files_dict["stiffness_mat"])
-        return bc_array, eigvals, eigvecs, mass_mat, stiffness_mat
+        mass_mat = sp.sparse.load_npz(files_dict["mass_mat"])
+        stiff_mat = sp.sparse.load_npz(files_dict["stiffness_mat"])
+        return bc_array, eigvals, eigvecs, mass_mat, stiff_mat
     return bc_array, eigvals, eigvecs
 
 
