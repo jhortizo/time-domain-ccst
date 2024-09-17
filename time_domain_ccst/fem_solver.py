@@ -177,7 +177,8 @@ def _compute_solution(
 
                 solutions[eqs_u, i + 1] = spsolve(M, b)
 
-                # here I could calculate also for theta and s, but it is not necessary
+                solutions[eqs_s, i + 1] = inv_A @ (k_us.T @ solutions[eqs_u, i + 1] - k_ws.T @ inv_k_ww @ f_w)
+                solutions[eqs_w, i + 1] = inv_k_ww @ (f_w + k_ws @ solutions[eqs_s, i + 1])
 
         save_solution_files(
             bc_array, solutions, files_dict, mass_mat, stiff_mat, return_matrices
