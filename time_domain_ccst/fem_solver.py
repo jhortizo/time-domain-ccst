@@ -79,6 +79,7 @@ def _compute_solution(
     dt: float | None,
     n_t_iters: int | None,
     initial_state: np.ndarray | None,
+    return_matrices: bool,
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
 
@@ -113,7 +114,9 @@ def _compute_solution(
     else:
         create_mesh(geometry_type, geometry_mesh_params, files_dict["mesh"])
 
-        cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params)
+        cons, elements, nodes, loads = _load_mesh(
+            files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params
+        )
 
     # Assembly
     can_be_sparse = not (scenario_to_solve == "eigenproblem")
@@ -174,9 +177,14 @@ def _compute_solution(
 
                 solutions[eqs_u, i + 1] = spsolve(M, b)
 
-                # here I could calculate also for theta and s, but it is not necessary
+                solutions[eqs_s, i + 1] = inv_A @ (k_us.T @ solutions[eqs_u, i + 1] - k_ws.T @ inv_k_ww @ f_w)
+                solutions[eqs_w, i + 1] = inv_k_ww @ (f_w + k_ws @ solutions[eqs_s, i + 1])
 
-        save_solution_files(bc_array, solutions, files_dict)
+        save_solution_files(
+            bc_array, solutions, files_dict, mass_mat, stiff_mat, return_matrices
+        )
+        if return_matrices:
+            return bc_array, solutions, mass_mat, stiff_mat, nodes, elements
         return bc_array, solutions, nodes, elements
 
 
@@ -193,6 +201,7 @@ def retrieve_solution(
     n_t_iter: int | None = None,
     initial_state: np.ndarray | None = None,
     cons_loads_fcn_params: dict = {},
+    return_matrices: bool = False,
 ):
     files_dict = generate_solution_filenames(
         geometry_type,
@@ -201,12 +210,15 @@ def retrieve_solution(
         scenario_to_solve,
         geometry_mesh_params,
         custom_str=custom_str,
+        return_matrices=return_matrices,
     )
     cons_loads_fcn = SYSTEMS[constraints_loads]
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
-        _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params)
-        solution_structures = load_solutions(files_dict, scenario_to_solve)
+        _, elements, nodes, _ = _load_mesh(
+            files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params
+        )
+        solution_structures = load_solutions(files_dict, scenario_to_solve, return_matrices)
         complete_response = (*solution_structures, nodes, elements)
 
     else:
@@ -222,6 +234,7 @@ def retrieve_solution(
             dt,
             n_t_iter,
             initial_state,
+            return_matrices,
         )
 
     return complete_response

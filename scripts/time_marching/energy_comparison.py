@@ -11,7 +11,9 @@ from time_domain_ccst.fem_solver import retrieve_solution
 from time_domain_ccst.plotter import (
     plot_fields_classical,
     plot_fields_quad9_rot4,
-    plot_oscillatory_movement_sample_points_complete_animation_vs_classical,
+)
+from time_domain_ccst.constants import (
+    IMAGES_FOLDER
 )
 
 plt.rcParams["image.cmap"] = "YlGnBu_r"
@@ -111,7 +113,7 @@ def get_dynamic_solution(
     geometry_type = "rectangle"
     params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
 
-    bc_array, solutions, nodes, _ = retrieve_solution(
+    _, solutions, mass_mat, stiff_mat, _, _ = retrieve_solution(
         geometry_type,
         params,
         model,
@@ -123,21 +125,10 @@ def get_dynamic_solution(
         n_t_iter=n_t_iter,
         initial_state=initial_state,
         custom_str=custom_str,
+        return_matrices=True,
     )
 
-    solution_displacements = get_displacements(bc_array, nodes, solutions, n_t_iter)
-
-    return solution_displacements, nodes
-
-
-def get_displacements(bc_array, nodes, solutions, n_iter_t):
-    solution_displacements = np.zeros((len(nodes), 2, n_iter_t))
-    for i in range(n_iter_t):
-        solution_displacements[:, :, i] = complete_disp(
-            bc_array[:, :2], nodes, solutions[:, i], ndof_node=2
-        )
-
-    return solution_displacements
+    return solutions, mass_mat, stiff_mat
 
 
 def find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u):
@@ -154,22 +145,15 @@ def find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u):
 def main():
     # -- Different cases run in this script
 
-    # ccst_n_eigvec = 0
-    # static_field_to_plot = "y"
-    # dt = 0.5
-
-    # ccst_n_eigvec = 2
-    # static_field_to_plot = "norm"
-    # dt = 0.05
-
     ccst_n_eigvec = 3
-    static_field_to_plot = "y"
-    dt = 0.05
+    dts = [0.1, 0.05, 0.01]
+    t_final = 100
+    n_t_iters = [int(t_final / dt) for dt in dts]
 
     # -- Overall constants
     geometry_type = "rectangle"
     params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
-    force_reprocess = False
+    force_reprocess = True
     plotting = False
 
     ccst_constraints_loads = "cantilever_support"
@@ -197,8 +181,6 @@ def main():
         ]
     )
 
-    n_t_iter = 1000
-
     # -- Finding initial states
     ccst_initial_state, classical_initial_state = find_initial_states(
         geometry_type,
@@ -215,22 +197,36 @@ def main():
     )
 
     # -- Getting dynamic solutions
-    custom_str = f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_ccst"
-    ccst_solution_displacements, nodes = get_dynamic_solution(
-        geometry_type,
-        params,
-        cst_model,
-        ccst_constraints_loads,
-        ccst_materials,
-        ccst_initial_state,
-        custom_str,
-        dt,
-        n_t_iter,
-        force_reprocess,
-    )
+    energy_ccst = []
+    for dt, n_t_iter in zip(dts, n_t_iters):
+        custom_str = f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_ccst"
+        ccst_solutions, ccst_mass_mat, ccst_stiff_mat = get_dynamic_solution(
+            geometry_type,
+            params,
+            cst_model,
+            ccst_constraints_loads,
+            ccst_materials,
+            ccst_initial_state,
+            custom_str,
+            dt,
+            n_t_iter,
+            force_reprocess,
+        )
 
-    custom_str = f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_classical"
-    classical_solution_displacements, nodes = get_dynamic_solution(
+        # calculate energy
+        d_solutions_u = (ccst_solutions[:, 1:] - ccst_solutions[:, :-1]) / dt
+        energy = []
+        for i in range(n_t_iter - 1):
+            energy.append(
+                ccst_solutions[:, i].T @ ccst_stiff_mat @ ccst_solutions[:, i]
+                + d_solutions_u[:, i].T @ ccst_mass_mat @ d_solutions_u[:, i]
+            )
+        energy_ccst.append(energy)
+
+    dt = dts[0]
+    n_t_iter = n_t_iters[0]
+    custom_str = f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_classical"
+    cl_solutions, cl_mass_mat, cl_stiff_mat = get_dynamic_solution(
         geometry_type,
         params,
         classical_model,
@@ -243,20 +239,31 @@ def main():
         force_reprocess,
     )
 
-    # -- Fancy plotting
-    ts = np.linspace(0, n_t_iter * dt, n_t_iter)
+    # calculate energy
+    energy_classical = []
+    d_solutions = (cl_solutions[:, 1:] - cl_solutions[:, :-1]) / dt
+    for i in range(n_t_iter - 1):
+        energy_classical.append(
+            cl_solutions[:, i].T @ cl_stiff_mat @ cl_solutions[:, i]
+            + d_solutions[:, i].T @ cl_mass_mat @ d_solutions[:, i]
+        )
 
-    plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
-        ccst_solution_displacements,
-        classical_solution_displacements,
-        nodes,
-        ts,
-        custom_str=custom_str,
-        n_plots=200,
-        n_points=3,
-        fps=10,
-        static_field_to_plot=static_field_to_plot,
-    )
+    # -- Fancy plotting
+    ts = [np.linspace(0, t_final, n_t_iter - 1) for n_t_iter in n_t_iters]
+
+    plt.figure(figsize=(8, 3))
+    plt.plot(ts[0], energy_classical / energy_classical[0], label=r"Classical, $\Delta t={0}$".format(dts[0]), color="black", linestyle="--")
+    colors = ["black", "#757575", "#b5b5b5"]    
+    for i, (dt, n_t_iter) in enumerate(zip(dts, n_t_iters)):
+        plt.plot(ts[i], energy_ccst[i] / energy_ccst[i][0], label=r"CCST, $\Delta t={0}$".format(dts[i]), color=colors[i], linestyle='-')
+    
+    plt.xlabel(r"$t$")
+    plt.ylabel(r"$E / E_0$")
+
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=4)
+    plt.tight_layout()
+    plt.savefig(f"{IMAGES_FOLDER}/energy_comparison.pdf", dpi=300)
+    plt.show()
 
 
 if __name__ == "__main__":
