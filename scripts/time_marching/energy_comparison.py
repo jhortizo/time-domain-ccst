@@ -251,15 +251,16 @@ def main():
     # -- Fancy plotting
     ts = [np.linspace(0, t_final, n_t_iter - 1) for n_t_iter in n_t_iters]
 
-    plt.figure()
+    plt.figure(figsize=(8, 3))
+    plt.plot(ts[0], energy_classical / energy_classical[0], label=r"Classical, $\Delta t={0}$".format(dts[0]), color="black", linestyle="--")
+    colors = ["black", "#757575", "#b5b5b5"]    
     for i, (dt, n_t_iter) in enumerate(zip(dts, n_t_iters)):
-        plt.plot(ts[i], energy_ccst[i] / energy_ccst[i][0], label=f"CCST, dt={dt}")
-    plt.plot(ts[0], energy_classical / energy_classical[0], label=f"Classical, dt={dts[0]}")
-
-    plt.xlabel(r"t")
+        plt.plot(ts[i], energy_ccst[i] / energy_ccst[i][0], label=r"CCST, $\Delta t={0}$".format(dts[i]), color=colors[i], linestyle='-')
+    
+    plt.xlabel(r"$t$")
     plt.ylabel(r"$E / E_0$")
 
-    plt.legend()
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=4)
     plt.tight_layout()
     plt.savefig(f"{IMAGES_FOLDER}/energy_comparison.pdf", dpi=300)
     plt.show()
