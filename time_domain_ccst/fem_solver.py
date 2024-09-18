@@ -160,6 +160,7 @@ def _compute_solution(
                 bc_array, nodes, u_0, len(elements), ndof_node=2
             )
             # TODO: this won't work for the ccst case, because I'm missing to add w and s fields
+            # missing to calculate the rotations over the vertex nodes, and s over the facet nodes
             solutions[:, 0] = initial_solution
             solutions[:, 1] = initial_solution
 
