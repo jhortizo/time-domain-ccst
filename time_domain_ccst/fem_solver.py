@@ -30,6 +30,8 @@ from .utils import (
     save_solution_files,
 )
 
+from .mms.utils import inverse_complete_disp
+
 cst_model_functions = {
     "cst_quad9_rot4": (assem_op_cst_quad9_rot4, cst_quad9_rot4),
     "cst_quad9": (assem_op_cst, cst_quad9),
@@ -78,7 +80,7 @@ def _compute_solution(
     scenario_to_solve: Literal["static", "eigenproblem", "time-marching"],
     dt: float | None,
     n_t_iters: int | None,
-    initial_state: np.ndarray | None,
+    initial_state: np.ndarray | None | callable,
     return_matrices: bool,
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
@@ -145,8 +147,22 @@ def _compute_solution(
     elif scenario_to_solve == "time-marching":
         rhs = loadasem(loads, bc_array, neq)
         solutions = np.zeros((neq, n_t_iters))
-        solutions[:, 0] = initial_state  # assume constant behavior in first steps
-        solutions[:, 1] = initial_state
+        if type(initial_state) == np.ndarray:
+            solutions[:, 0] = initial_state  # assume constant behavior in first steps
+            solutions[:, 1] = initial_state
+        elif callable(initial_state):
+            ...
+            u_0 = initial_state(nodes[:, 1], nodes[:, 2])
+            u_0 = np.squeeze(u_0)
+            u_0 = np.swapaxes(u_0, 0, 1)
+
+            initial_solution = inverse_complete_disp(
+                bc_array, nodes, u_0, len(elements), ndof_node=2
+            )
+            # TODO: this won't work for the ccst case, because I'm missing to add w and s fields
+            solutions[:, 0] = initial_solution
+            solutions[:, 1] = initial_solution
+
         if cst_model == "classical_quad9":
             for i in tqdm(range(1, n_t_iters - 1), desc="iterations"):
                 A = mass_mat + dt**2 * stiff_mat
@@ -177,8 +193,12 @@ def _compute_solution(
 
                 solutions[eqs_u, i + 1] = spsolve(M, b)
 
-                solutions[eqs_s, i + 1] = inv_A @ (k_us.T @ solutions[eqs_u, i + 1] - k_ws.T @ inv_k_ww @ f_w)
-                solutions[eqs_w, i + 1] = inv_k_ww @ (f_w + k_ws @ solutions[eqs_s, i + 1])
+                solutions[eqs_s, i + 1] = inv_A @ (
+                    k_us.T @ solutions[eqs_u, i + 1] - k_ws.T @ inv_k_ww @ f_w
+                )
+                solutions[eqs_w, i + 1] = inv_k_ww @ (
+                    f_w + k_ws @ solutions[eqs_s, i + 1]
+                )
 
         save_solution_files(
             bc_array, solutions, files_dict, mass_mat, stiff_mat, return_matrices
@@ -218,7 +238,9 @@ def retrieve_solution(
         _, elements, nodes, _ = _load_mesh(
             files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params
         )
-        solution_structures = load_solutions(files_dict, scenario_to_solve, return_matrices)
+        solution_structures = load_solutions(
+            files_dict, scenario_to_solve, return_matrices
+        )
         complete_response = (*solution_structures, nodes, elements)
 
     else:
