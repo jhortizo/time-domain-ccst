@@ -153,15 +153,35 @@ def _compute_solution(
             u_x_0 = initial_state["u_x"](nodes[:, 1], nodes[:, 2])
             u_y_0 = initial_state["u_y"](nodes[:, 1], nodes[:, 2])
 
-            u_0 = np.zeros((len(nodes), 2))
-            u_0[:, 0] = u_x_0
-            u_0[:, 1] = u_y_0
+            if cst_model == "cst_quad9_rot4":
+                w_0 = initial_state["w"](nodes[:, 1], nodes[:, 2])
+                s_0 = initial_state["s"](nodes[:, 1], nodes[:, 2])
 
-            initial_solution = inverse_complete_disp(
-                bc_array, nodes, u_0, len(elements), cst_model, ndof_node=2
-            )
-            # TODO: this won't work for the ccst case, because I'm missing to add w and s fields
-            # missing to calculate the rotations over the vertex nodes, and s over the facet nodes
+                u_0 = np.zeros((len(nodes), 3))
+                u_0[:, 0] = u_x_0
+                u_0[:, 1] = u_y_0
+                u_0[:, 2] = w_0
+
+                initial_solution = inverse_complete_disp(
+                    bc_array, nodes, u_0, len(elements), cst_model, ndof_node=3
+                )
+
+                # and the skew-symmetric part of the force-stress tensor
+                eqs_s = assem_op[:, 22]
+                eqs_s = eqs_s[eqs_s >= 0]
+                # get the rows of assem_op where col 22 is not -1
+                id_elements_s = np.where(assem_op[:, 22] >= 0)[0]
+                id_nodes_s = elements[id_elements_s, 11]
+                initial_solution[eqs_s] = s_0[id_nodes_s]
+
+            if cst_model == "classical_quad9":
+                u_0 = np.zeros((len(nodes), 2))
+                u_0[:, 0] = u_x_0
+                u_0[:, 1] = u_y_0
+                initial_solution = inverse_complete_disp(
+                    bc_array, nodes, u_0, len(elements), cst_model, ndof_node=2
+                )
+
             solutions[:, 0] = initial_solution
             solutions[:, 1] = initial_solution
 

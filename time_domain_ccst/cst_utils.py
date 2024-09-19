@@ -300,7 +300,7 @@ def inverse_complete_disp(
     nodes,
     sol_complete,
     len_elements,
-    model='cst_quad9_rot4',
+    model="cst_quad9_rot4",
     ndof_node=2,
 ):
     nnodes = nodes.shape[0]

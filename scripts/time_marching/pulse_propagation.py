@@ -34,11 +34,11 @@ def create_pulse_function(x_length, eta, plotting=False):
 
     u = sp.Matrix([u_x, u_y, 0])
     w = vector.curl(u) / 2
-    sp.plotting.plot3d(w[2], (x, 0, 2), (y, 0, 1), title="w")
+    # sp.plotting.plot3d(w[2], (x, 0, 2), (y, 0, 1), title="w")
 
 
     s = eta / 2 * vector.curl(vector.curl(vector.curl(u)))
-    sp.plotting.plot3d(s[2], (x, 0, 2), (y, 0, 1), title="s")
+    # sp.plotting.plot3d(s[2], (x, 0, 2), (y, 0, 1), title="s")
 
     initial_state_x = sp.lambdify((x, y), u_x, "numpy")
     initial_state_y = sp.lambdify((x, y), u_y, "numpy")
@@ -83,13 +83,20 @@ def get_dynamic_solution(
     )
 
     print("Number of elements:", len(elements))
-    plot_fields_classical(
-        bc_array,
-        nodes,
-        elements,
-        solutions[:, -1],
-        instant_show=True,
-    )
+    # plot_fields_classical(
+    #     bc_array,
+    #     nodes,
+    #     elements,
+    #     solutions[:, -1],
+    #     instant_show=True,
+    # )
+    # plot_fields_quad9_rot4(
+    #     bc_array,
+    #     nodes,
+    #     elements,
+    #     solutions[:, -1],
+    #     instant_show=True,
+    # )
 
     solution_displacements = get_displacements(bc_array, nodes, solutions, n_t_iter)
 
@@ -192,25 +199,25 @@ def plot_and_animation(
 def main():
     # -- Different cases run in this script
 
-    t_final = 4.0
+    t_final = 0.5
     dt = 0.01
     n_t_iter = int(t_final / dt)
 
     # -- Overall constants
     geometry_type = "rectangle"
     x_length = 2.0
-    params = {"side_x": x_length, "side_y": 1.0, "mesh_size": 0.1}
+    params = {"side_x": x_length, "side_y": 1.0, "mesh_size": 0.2}
     force_reprocess = True
     plotting = False
 
-    ccst_constraints_loads = "cantilever_support"
+    ccst_constraints_loads = "pulse_ccst"
     cst_model = "cst_quad9_rot4"
     ccst_materials = np.array(
         [
             [
                 1,  # E, young's modulus
                 0.29,  # nu, poisson's ratio
-                0.1,  # eta, coupling parameter
+                0.01,  # eta, coupling parameter
                 1,  # rho, density
             ]
         ]
@@ -232,19 +239,19 @@ def main():
     common_initial_state = create_pulse_function(x_length, ccst_materials[0, 2], plotting)
 
     # -- Getting dynamic solutions
-    # custom_str = f"pulse_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_ccst"
-    # ccst_solution_displacements, nodes = get_dynamic_solution(
-    #     geometry_type,
-    #     params,
-    #     cst_model,
-    #     ccst_constraints_loads,
-    #     ccst_materials,
-    #     common_initial_state,
-    #     custom_str,
-    #     dt,
-    #     n_t_iter,
-    #     force_reprocess,
-    # )
+    custom_str = f"pulse_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_ccst"
+    ccst_solution_displacements, nodes = get_dynamic_solution(
+        geometry_type,
+        params,
+        cst_model,
+        ccst_constraints_loads,
+        ccst_materials,
+        common_initial_state,
+        custom_str,
+        dt,
+        n_t_iter,
+        force_reprocess,
+    )
 
     custom_str = (
         f"pulse_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_classical"
@@ -261,8 +268,6 @@ def main():
         n_t_iter,
         force_reprocess,
     )
-
-    ccst_solution_displacements = classical_solution_displacements
 
     plot_and_animation(
         n_t_iter,
