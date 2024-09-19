@@ -13,6 +13,7 @@ from time_domain_ccst.plotter import (
     plot_fields_quad9_rot4,
     plot_oscillatory_movement_sample_points_complete_animation_vs_classical,
 )
+from time_domain_ccst.constants import IMAGES_FOLDER
 
 plt.rcParams["image.cmap"] = "YlGnBu_r"
 plt.rcParams["mathtext.fontset"] = "cm"
@@ -89,6 +90,70 @@ def get_displacements(bc_array, nodes, solutions, n_iter_t):
     return solution_displacements
 
 
+def plot_and_animation(
+    n_t_iter, dt, nodes, classical_solution_displacements, ccst_solution_displacements
+):
+    # -- Fancy plotting
+    ts = np.linspace(0, n_t_iter * dt, n_t_iter)
+
+    line_nodes_ids = np.where(np.abs(nodes[:, 2] - 0.5) < 0.01)[0]
+    line_nodes_ids = line_nodes_ids[np.argsort(nodes[line_nodes_ids, 1])]
+
+    # get u_y values
+    cl_u_y = classical_solution_displacements[line_nodes_ids, 1, :]
+    ccst_u_y = ccst_solution_displacements[line_nodes_ids, 1, :]
+
+    n_plots = 1000
+    t = ts
+    # and then it comes the animation, complete
+    if n_plots is None:
+        n_plots = len(t)
+
+    time_steps = np.linspace(0, len(t) - 1, n_plots, dtype=int)
+
+    fig, ax = plt.subplots()
+    ax.axis("off")
+    ax.set_aspect("equal")
+
+    ax.set_ylim(-1, 1)
+    ax.set_xlim(0, 1)
+
+    (contour_ccst,) = ax.plot(
+        nodes[line_nodes_ids, 1],
+        ccst_u_y[:, time_steps[0]],
+        "k",
+    )
+    (contour_classical,) = ax.plot(
+        nodes[line_nodes_ids, 1],
+        cl_u_y[:, time_steps[0]],
+        color="gray",
+        linestyle="--",
+    )
+
+    time_text = ax.text(0.02, 1, f"Time: {t[0]:.2f}", transform=ax.transAxes)
+
+    def update(frame):
+        contour_ccst.set_ydata(ccst_u_y[:, time_steps[frame]])
+        contour_classical.set_ydata(cl_u_y[:, time_steps[frame]])
+        time_text.set_text(f"Time: {t[time_steps[frame]]:.2f}")
+
+        return (
+            contour_ccst,
+            contour_classical,
+            time_text,
+        )
+
+    from matplotlib.animation import FuncAnimation
+
+    ani = FuncAnimation(fig, update, frames=len(time_steps), blit=True, interval=50)
+
+    fps = 10
+    ani.save(
+        f"{IMAGES_FOLDER}/pulse_propagation.gif",
+        fps=fps,
+    )
+
+
 def main():
     # -- Different cases run in this script
 
@@ -146,7 +211,7 @@ def main():
     # )
 
     custom_str = (
-        f"pules_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_classical"
+        f"pulse_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_classical"
     )
     classical_solution_displacements, nodes = get_dynamic_solution(
         geometry_type,
@@ -161,66 +226,14 @@ def main():
         force_reprocess,
     )
 
-    # -- Fancy plotting
-    ts = np.linspace(0, n_t_iter * dt, n_t_iter)
-
     ccst_solution_displacements = classical_solution_displacements
 
-    line_nodes_ids = np.where(np.abs(nodes[:, 2] - 0.5) < 0.01)[0]
-    line_nodes_ids = line_nodes_ids[np.argsort(nodes[line_nodes_ids, 1])]
-
-    # get u_y values
-    cl_u_y = classical_solution_displacements[line_nodes_ids, 1, :]
-    ccst_u_y = ccst_solution_displacements[line_nodes_ids, 1, :]
-
-    n_plots = 1000
-    t = ts
-    # and then it comes the animation, complete
-    if n_plots is None:
-        n_plots = len(t)
-
-    time_steps = np.linspace(0, len(t) - 1, n_plots, dtype=int)
-
-    fig, ax = plt.subplots()
-    ax.axis("off")
-    ax.set_aspect("equal")
-
-    ax.set_ylim(-1, 1)
-    ax.set_xlim(0, 1)
-
-    (contour_ccst,) = ax.plot(
-        nodes[line_nodes_ids, 1],
-        ccst_u_y[:, time_steps[0]],
-        "k",
-    )
-    (contour_classical,) = ax.plot(
-        nodes[line_nodes_ids, 1],
-        cl_u_y[:, time_steps[0]],
-        color="gray",
-        linestyle="--",
-    )
-
-    time_text = ax.text(0.02, 1, f"Time: {t[0]:.2f}", transform=ax.transAxes)
-
-    def update(frame):
-        contour_ccst.set_ydata(ccst_u_y[:, time_steps[frame]])
-        contour_classical.set_ydata(cl_u_y[:, time_steps[frame]])
-        time_text.set_text(f"Time: {t[time_steps[frame]]:.2f}")
-
-        return (
-            contour_ccst,
-            contour_classical,
-            time_text,
-        )
-
-    from matplotlib.animation import FuncAnimation
-
-    ani = FuncAnimation(fig, update, frames=len(time_steps), blit=True, interval=50)
-
-    fps = 10
-    ani.save(
-        "pulse_propagation.gif",
-        fps=fps,
+    plot_and_animation(
+        n_t_iter,
+        dt,
+        nodes,
+        classical_solution_displacements,
+        ccst_solution_displacements,
     )
 
 
