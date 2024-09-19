@@ -200,4 +200,5 @@ SYSTEMS = {
     "plate_hole_rollers_load": plate_hole_rollers_load,
     "circle_borders_fixed": circle_borders_fixed,
     "floating": no_constraints_no_loads,
+    'pulse_classical': pulse_classical,
 }

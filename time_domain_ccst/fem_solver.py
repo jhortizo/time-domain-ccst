@@ -19,7 +19,7 @@ from .cst_utils import (
     cst_quad9_rot4,
     decouple_global_matrices,
     get_variables_eqs,
-    inverse_complete_disp
+    inverse_complete_disp,
 )
 from .gmesher import create_mesh
 from .utils import (
@@ -79,7 +79,7 @@ def _compute_solution(
     scenario_to_solve: Literal["static", "eigenproblem", "time-marching"],
     dt: float | None,
     n_t_iters: int | None,
-    initial_state: np.ndarray | None | callable,
+    initial_state: np.ndarray | dict | None,
     return_matrices: bool,
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
@@ -149,13 +149,16 @@ def _compute_solution(
         if type(initial_state) == np.ndarray:
             solutions[:, 0] = initial_state  # assume constant behavior in first steps
             solutions[:, 1] = initial_state
-        elif callable(initial_state):
-            u_0 = initial_state(nodes[:, 1], nodes[:, 2])
-            u_0 = np.squeeze(u_0)
-            u_0 = np.swapaxes(u_0, 0, 1)
+        elif isinstance(initial_state, dict):
+            u_x_0 = initial_state["u_x"](nodes[:, 1], nodes[:, 2])
+            u_y_0 = initial_state["u_y"](nodes[:, 1], nodes[:, 2])
+
+            u_0 = np.zeros((len(nodes), 2))
+            u_0[:, 0] = u_x_0
+            u_0[:, 1] = u_y_0
 
             initial_solution = inverse_complete_disp(
-                bc_array, nodes, u_0, len(elements), ndof_node=2
+                bc_array, nodes, u_0, len(elements), cst_model, ndof_node=2
             )
             # TODO: this won't work for the ccst case, because I'm missing to add w and s fields
             # missing to calculate the rotations over the vertex nodes, and s over the facet nodes
@@ -218,7 +221,7 @@ def retrieve_solution(
     custom_str: str = "",
     dt: float | None = None,
     n_t_iter: int | None = None,
-    initial_state: np.ndarray | None = None,
+    initial_state: np.ndarray | dict | None = None,
     cons_loads_fcn_params: dict = {},
     return_matrices: bool = False,
 ):

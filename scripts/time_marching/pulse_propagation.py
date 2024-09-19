@@ -18,81 +18,25 @@ plt.rcParams["image.cmap"] = "YlGnBu_r"
 plt.rcParams["mathtext.fontset"] = "cm"
 
 
-def find_initial_states(
-    geometry_type,
-    params,
-    cst_model,
-    ccst_constraints_loads,
-    ccst_materials,
-    classical_model,
-    classical_constraints_loads,
-    classical_materials,
-    force_reprocess,
-    ccst_n_eigvec,
-    plotting=False,
-):
-    ccst_bc_array, _, ccst_eigvecs, nodes, elements = retrieve_solution(
-        geometry_type,
-        params,
-        cst_model,
-        ccst_constraints_loads,
-        ccst_materials,
-        scenario_to_solve="eigenproblem",
-        force_reprocess=force_reprocess,
-    )
+def create_pulse_function(plotting=False):
+    import sympy as sp
 
-    classical_bc_array, _, classical_eigvecs, nodes, elements = retrieve_solution(
-        geometry_type,
-        params,
-        classical_model,
-        classical_constraints_loads,
-        classical_materials,
-        scenario_to_solve="eigenproblem",
-        force_reprocess=force_reprocess,
-    )
+    x, y = sp.symbols("x y")
 
-    ccst_eigvecs_u = np.array(
-        [
-            complete_disp(ccst_bc_array[:, :2], nodes, ccst_eigvecs[:, i], ndof_node=2)
-            for i in range(ccst_eigvecs.shape[1])
-        ]
-    )
+    # gaussian pulse centered at x = 0.5
+    u_y = sp.exp(-100 * (x - 0.5) ** 2)
+    # sp.plotting.plot3d(u_y, (x, 0, 1), (y, 0, 1), title="u_x")
+    u_x = 0
 
-    classical_eigvecs = -1 * classical_eigvecs
-    classical_eigvecs_u = np.array(
-        [
-            complete_disp(
-                classical_bc_array, nodes, classical_eigvecs[:, i], ndof_node=2
-            )
-            for i in range(classical_eigvecs.shape[1])
-        ]
-    )
-    print("Number of elements:", len(elements))
+    initial_state_x = sp.lambdify((x, y), u_x, "numpy")
+    initial_state_y = sp.lambdify((x, y), u_y, "numpy")
 
-    list_closer = find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u)
-    classical_n_eigvec = list_closer[ccst_n_eigvec][1]
+    initial_state_components = {
+        "u_x": initial_state_x,
+        "u_y": initial_state_y,
+    }
 
-    if plotting:
-        plot_fields_quad9_rot4(
-            ccst_bc_array,
-            nodes,
-            elements,
-            ccst_eigvecs[:, ccst_n_eigvec],
-            instant_show=True,
-        )
-
-        plot_fields_classical(
-            classical_bc_array,
-            nodes,
-            elements,
-            classical_eigvecs[:, classical_n_eigvec],
-            instant_show=True,
-        )
-
-    ccst_initial_state = ccst_eigvecs[:, ccst_n_eigvec]
-    classical_initial_state = classical_eigvecs[:, classical_n_eigvec]
-
-    return ccst_initial_state, classical_initial_state
+    return initial_state_components
 
 
 def get_dynamic_solution(
@@ -108,10 +52,7 @@ def get_dynamic_solution(
     force_reprocess,
 ):
     scenario_to_solve = "time-marching"
-    geometry_type = "rectangle"
-    params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
-
-    bc_array, solutions, nodes, _ = retrieve_solution(
+    bc_array, solutions, nodes, elements = retrieve_solution(
         geometry_type,
         params,
         model,
@@ -123,6 +64,14 @@ def get_dynamic_solution(
         n_t_iter=n_t_iter,
         initial_state=initial_state,
         custom_str=custom_str,
+    )
+
+    plot_fields_classical(
+        bc_array,
+        nodes,
+        elements,
+        solutions[:, 100],
+        instant_show=True,
     )
 
     solution_displacements = get_displacements(bc_array, nodes, solutions, n_t_iter)
@@ -140,35 +89,14 @@ def get_displacements(bc_array, nodes, solutions, n_iter_t):
     return solution_displacements
 
 
-def find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u):
-    list_closer = []
-    for i, ccst_eigvec in enumerate(ccst_eigvecs_u):
-        closest_index = np.argmin(
-            np.linalg.norm(classical_eigvecs_u - ccst_eigvec, axis=(1, 2))
-        )
-        list_closer.append((i, closest_index))
-
-    return list_closer
-
-
 def main():
     # -- Different cases run in this script
 
-    # ccst_n_eigvec = 0
-    # static_field_to_plot = "y"
-    # dt = 0.5
-
-    # ccst_n_eigvec = 2
-    # static_field_to_plot = "norm"
-    # dt = 0.05
-
-    ccst_n_eigvec = 3
-    static_field_to_plot = "y"
-    dt = 0.05
+    dt = 0.01
 
     # -- Overall constants
     geometry_type = "rectangle"
-    params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
+    params = {"side_x": 1.0, "side_y": 1.0, "mesh_size": 0.25}
     force_reprocess = False
     plotting = False
 
@@ -185,7 +113,7 @@ def main():
         ]
     )
 
-    classical_constraints_loads = "cantilever_support_classical"
+    classical_constraints_loads = "pulse_classical"
     classical_model = "classical_quad9"
     classical_materials = np.array(
         [
@@ -200,43 +128,33 @@ def main():
     n_t_iter = 1000
 
     # -- Finding initial states
-    ccst_initial_state, classical_initial_state = find_initial_states(
-        geometry_type,
-        params,
-        cst_model,
-        ccst_constraints_loads,
-        ccst_materials,
-        classical_model,
-        classical_constraints_loads,
-        classical_materials,
-        force_reprocess,
-        ccst_n_eigvec=ccst_n_eigvec,
-        plotting=plotting,
-    )
+    common_initial_state = create_pulse_function(plotting)
 
     # -- Getting dynamic solutions
-    custom_str = f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_ccst"
-    ccst_solution_displacements, nodes = get_dynamic_solution(
-        geometry_type,
-        params,
-        cst_model,
-        ccst_constraints_loads,
-        ccst_materials,
-        ccst_initial_state,
-        custom_str,
-        dt,
-        n_t_iter,
-        force_reprocess,
-    )
+    # custom_str = f"pulse_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_ccst"
+    # ccst_solution_displacements, nodes = get_dynamic_solution(
+    #     geometry_type,
+    #     params,
+    #     cst_model,
+    #     ccst_constraints_loads,
+    #     ccst_materials,
+    #     common_initial_state,
+    #     custom_str,
+    #     dt,
+    #     n_t_iter,
+    #     force_reprocess,
+    # )
 
-    custom_str = f"mode_{ccst_n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_classical"
+    custom_str = (
+        f"pules_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_classical"
+    )
     classical_solution_displacements, nodes = get_dynamic_solution(
         geometry_type,
         params,
         classical_model,
         classical_constraints_loads,
         classical_materials,
-        classical_initial_state,
+        common_initial_state,
         custom_str,
         dt,
         n_t_iter,
@@ -246,16 +164,63 @@ def main():
     # -- Fancy plotting
     ts = np.linspace(0, n_t_iter * dt, n_t_iter)
 
-    plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
-        ccst_solution_displacements,
-        classical_solution_displacements,
-        nodes,
-        ts,
-        custom_str=custom_str,
-        n_plots=200,
-        n_points=3,
-        fps=10,
-        static_field_to_plot=static_field_to_plot,
+    ccst_solution_displacements = classical_solution_displacements
+
+    line_nodes_ids = np.where(np.abs(nodes[:, 2] - 0.5) < 0.01)[0]
+    line_nodes_ids = line_nodes_ids[np.argsort(nodes[line_nodes_ids, 1])]
+
+    # get u_y values
+    cl_u_y = classical_solution_displacements[line_nodes_ids, 1, :]
+    ccst_u_y = ccst_solution_displacements[line_nodes_ids, 1, :]
+
+    n_plots = 1000
+    t = ts
+    # and then it comes the animation, complete
+    if n_plots is None:
+        n_plots = len(t)
+
+    time_steps = np.linspace(0, len(t) - 1, n_plots, dtype=int)
+
+    fig, ax = plt.subplots()
+    ax.axis("off")
+    ax.set_aspect("equal")
+
+    ax.set_ylim(-1, 1)
+    ax.set_xlim(0, 1)
+
+    (contour_ccst,) = ax.plot(
+        nodes[line_nodes_ids, 1],
+        ccst_u_y[:, time_steps[0]],
+        "k",
+    )
+    (contour_classical,) = ax.plot(
+        nodes[line_nodes_ids, 1],
+        cl_u_y[:, time_steps[0]],
+        color="gray",
+        linestyle="--",
+    )
+
+    time_text = ax.text(0.02, 1, f"Time: {t[0]:.2f}", transform=ax.transAxes)
+
+    def update(frame):
+        contour_ccst.set_ydata(ccst_u_y[:, time_steps[frame]])
+        contour_classical.set_ydata(cl_u_y[:, time_steps[frame]])
+        time_text.set_text(f"Time: {t[time_steps[frame]]:.2f}")
+
+        return (
+            contour_ccst,
+            contour_classical,
+            time_text,
+        )
+
+    from matplotlib.animation import FuncAnimation
+
+    ani = FuncAnimation(fig, update, frames=len(time_steps), blit=True, interval=50)
+
+    fps = 10
+    ani.save(
+        "pulse_propagation.gif",
+        fps=fps,
     )
 
 
