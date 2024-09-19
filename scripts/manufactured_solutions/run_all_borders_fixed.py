@@ -17,9 +17,10 @@ from time_domain_ccst.mms.proposed_solutions import (
 )
 from time_domain_ccst.mms.utils import (
     calculate_body_force_fcn_continuum_mechanics,
-    inverse_complete_disp,
     solve_manufactured_solution,
 )
+
+from time_domain_ccst.cst_utils import inverse_complete_disp
 
 warnings.filterwarnings(
     "ignore", "The following kwargs were not used by contour: 'shading'", UserWarning

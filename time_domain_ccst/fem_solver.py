@@ -19,6 +19,7 @@ from .cst_utils import (
     cst_quad9_rot4,
     decouple_global_matrices,
     get_variables_eqs,
+    inverse_complete_disp
 )
 from .gmesher import create_mesh
 from .utils import (
@@ -29,8 +30,6 @@ from .utils import (
     save_eigensolution_files,
     save_solution_files,
 )
-
-from .mms.utils import inverse_complete_disp
 
 cst_model_functions = {
     "cst_quad9_rot4": (assem_op_cst_quad9_rot4, cst_quad9_rot4),
@@ -151,7 +150,6 @@ def _compute_solution(
             solutions[:, 0] = initial_state  # assume constant behavior in first steps
             solutions[:, 1] = initial_state
         elif callable(initial_state):
-            ...
             u_0 = initial_state(nodes[:, 1], nodes[:, 2])
             u_0 = np.squeeze(u_0)
             u_0 = np.swapaxes(u_0, 0, 1)
