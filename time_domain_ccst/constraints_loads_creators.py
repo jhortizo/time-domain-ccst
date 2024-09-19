@@ -84,7 +84,9 @@ def cantilever_support_load(line3, cell_data, npts, load=-1):
     loads = np.zeros((npts, 4))  # empty loads
     loads[:, 0] = np.arange(npts)  # specify nodes
 
-    loads[right_border, 1 + 1] = load * len(right_border) # force in y direction, multiplied by number of points
+    loads[right_border, 1 + 1] = load * len(
+        right_border
+    )  # force in y direction, multiplied by number of points
 
     return cons, loads
 
@@ -116,6 +118,26 @@ def cantilever_support_classical(line3, cell_data, npts):
 
     cons = np.zeros((npts, 2), dtype=int)
     cons[list(left_border), :] = -1
+
+    loads = np.zeros((npts, 3))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    return cons, loads
+
+
+def pulse_classical(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+
+    Classical refers to only add 2 dofs per node, instead of 3.
+    """
+
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+    right_border = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+
+    cons = np.zeros((npts, 2), dtype=int)
+    cons[list(left_border), :] = -1
+    cons[list(right_border), :] = -1
 
     loads = np.zeros((npts, 3))  # empty loads
     loads[:, 0] = np.arange(npts)  # specify nodes
