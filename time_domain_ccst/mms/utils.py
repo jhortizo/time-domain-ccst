@@ -173,14 +173,3 @@ def solve_manufactured_solution(
         cons, elements, nodes, loads = generate_load_mesh(mesh_size, mesh_file)
 
     return bc_array, solution, nodes, elements, rhs, mass_mat
-
-
-def inverse_complete_disp(bc_array, nodes, sol_complete, len_elements, ndof_node=2):
-    nnodes = nodes.shape[0]
-    sol = np.zeros(bc_array.max() + len_elements + 1, dtype=float)
-    for row in range(nnodes):
-        for col in range(ndof_node):
-            cons = bc_array[row, col]
-            if cons != -1:
-                sol[cons] = sol_complete[row, col]
-    return sol
