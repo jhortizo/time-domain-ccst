@@ -154,17 +154,17 @@ def find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u):
 def main():
     # -- Different cases run in this script
 
-    # ccst_n_eigvec = 0
-    # static_field_to_plot = "y"
-    # dt = 0.5
+    ccst_n_eigvec = 0
+    static_field_to_plot = "y"
+    dt = 0.5
 
     # ccst_n_eigvec = 2
     # static_field_to_plot = "norm"
     # dt = 0.05
 
-    ccst_n_eigvec = 3
-    static_field_to_plot = "y"
-    dt = 0.05
+    # ccst_n_eigvec = 3
+    # static_field_to_plot = "y"
+    # dt = 0.05
 
     # -- Overall constants
     geometry_type = "rectangle"

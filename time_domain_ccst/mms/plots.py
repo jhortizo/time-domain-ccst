@@ -5,18 +5,11 @@ import numpy as np
 from solidspy.postprocesor import complete_disp, plot_node_field
 from time_domain_ccst.constants import IMAGES_FOLDER
 
-# rewrites the settings from solidspy.postprocessor
-black = "#000000"
+plt.style.use("cst_paper.mplstyle")
+
 plt.rcParams["image.cmap"] = "YlGnBu_r"
 plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams["text.color"] = black
-plt.rcParams["font.size"] = 12
-plt.rcParams["xtick.color"] = black
-plt.rcParams["ytick.color"] = black
-plt.rcParams["axes.labelcolor"] = black
-plt.rcParams["axes.edgecolor"] = black
-plt.rcParams["axes.spines.right"] = False
-plt.rcParams["axes.spines.top"] = False
+
 
 def conditional_loads_plotting(
     bc_array,
@@ -68,7 +61,7 @@ def conditional_fields_plotting(
             elements,
             savefigs=savefigs,
             filename=[
-                f"{IMAGES_FOLDER}/{image_names}_u_fem_{len(elements)}_elements.png"
+                f"{IMAGES_FOLDER}/{image_names}_u_fem_{len(elements)}_elements.pdf"
             ],
         )
         plot_node_field(
@@ -77,7 +70,7 @@ def conditional_fields_plotting(
             elements,
             savefigs=savefigs,
             filename=[
-                f"{IMAGES_FOLDER}/{image_names}_u_true_{len(elements)}_elements.png"
+                f"{IMAGES_FOLDER}/{image_names}_u_true_{len(elements)}_elements.pdf"
             ],
         )
         plot_node_field(
@@ -86,7 +79,7 @@ def conditional_fields_plotting(
             elements,
             savefigs=savefigs,
             filename=[
-                f"{IMAGES_FOLDER}/{image_names}_norm_diff_{len(elements)}_elements.png"
+                f"{IMAGES_FOLDER}/{image_names}_norm_diff_{len(elements)}_elements.pdf"
             ],
         )
 
@@ -108,7 +101,7 @@ def conditional_fields_plotting(
         contour = ax.tricontourf(x, y, z_fem, levels=50, cmap="YlGnBu_r")
         fig.colorbar(contour, ax=ax)
         plt.savefig(
-            f"{IMAGES_FOLDER}/{image_names}_curl_fem_{len(elements)}_elements.png",
+            f"{IMAGES_FOLDER}/{image_names}_curl_fem_{len(elements)}_elements.pdf",
             dpi=300,
         )
 
@@ -117,7 +110,7 @@ def conditional_fields_plotting(
         contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="YlGnBu_r")
         fig.colorbar(contour, ax=ax)
         plt.savefig(
-            f"{IMAGES_FOLDER}/{image_names}_curl_true_{len(elements)}_elements.png",
+            f"{IMAGES_FOLDER}/{image_names}_curl_true_{len(elements)}_elements.pdf",
             dpi=300,
         )
 
@@ -128,7 +121,7 @@ def conditional_fields_plotting(
         )
         fig.colorbar(contour, ax=ax)
         plt.savefig(
-            f"{IMAGES_FOLDER}/{image_names}_curl_diff_{len(elements)}_elements.png",
+            f"{IMAGES_FOLDER}/{image_names}_curl_diff_{len(elements)}_elements.pdf",
             dpi=300,
         )
 
@@ -154,15 +147,13 @@ def convergence_plot(
     log_mesh = np.log10(n_elements)
     log_rmse = np.log10(errors)
 
-    # and then plot the results
     plt.figure()
     plt.loglog(n_elements, errors, "o-", label=error_metric_name)
-    # plt.loglog(n_elements, max_errors, label="Max Error")
     plt.xlabel("Number of elements")
     plt.ylabel("Error")
     plt.grid()
-    # plt.legend()
-
+    plt.tight_layout()
+    
     if filename:
         plt.savefig(f"{IMAGES_FOLDER}/{filename}", dpi=300)
     plt.show()

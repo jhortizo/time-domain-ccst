@@ -100,7 +100,7 @@ def run_mms():
         n_elements,
         l2_errors,
         error_metric_name="Error L2 Norm",
-        filename=f"mms_n_elements_convergence_l2norm{custom_string}.png",
+        filename=f"mms_n_elements_convergence_l2norm{custom_string}.pdf",
     )
 
 
