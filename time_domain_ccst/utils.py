@@ -60,6 +60,8 @@ def generate_solution_filenames(
         solution_files["solution"] = (
             f"{SOLUTIONS_FOLDER}/{solution_id}-time-solutions.csv"
         )
+    else:
+        raise ValueError("Invalid scenario to solve")
     if return_matrices:
         mass_mat_file = f"{MESHES_FOLDER}/{solution_id}-mass_mat.npz"
         stiffness_mat_file = f"{MESHES_FOLDER}/{solution_id}-stiffness_mat.npz"

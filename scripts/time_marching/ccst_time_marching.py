@@ -71,9 +71,9 @@ def main():
     )
     print("Number of elements:", len(elements))
     n_eigvec = 11
-    plot_fields_quad9_rot4(
-        bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True
-    )
+    # plot_fields_quad9_rot4(
+    #     bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=True
+    # )
 
     # the mesh and constraints are the same, so the exact structure of the eigvecs array
     # can be used as initial state

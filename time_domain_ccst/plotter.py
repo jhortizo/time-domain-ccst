@@ -266,7 +266,7 @@ def plot_oscillatory_movement_sample_points_complete_animation(
     if custom_str:
         plt.savefig(
             IMAGES_FOLDER
-            + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points.png",
+            + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points.pdf",
             dpi=300,
         )
 
@@ -474,7 +474,7 @@ def plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
     if custom_str:
         plt.savefig(
             IMAGES_FOLDER
-            + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points_vs_classical_{static_field_to_plot}.png",
+            + f"/ccst_fixed_cantilever_{custom_str}_implicit_sample_points_vs_classical_{static_field_to_plot}.pdf",
             dpi=300,
         )
 
