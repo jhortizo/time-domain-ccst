@@ -24,7 +24,6 @@ plt.rcParams["mathtext.fontset"] = "cm"
 
 
 def create_pulse_function(x_length, eta, plotting=False):
-
     x, y = sp.symbols("x y")
 
     # gaussian pulse centered at x = 0.5
@@ -35,7 +34,6 @@ def create_pulse_function(x_length, eta, plotting=False):
     u = sp.Matrix([u_x, u_y, 0])
     w = vector.curl(u) / 2
     # sp.plotting.plot3d(w[2], (x, 0, 2), (y, 0, 1), title="w")
-
 
     s = eta / 2 * vector.curl(vector.curl(vector.curl(u)))
     # sp.plotting.plot3d(s[2], (x, 0, 2), (y, 0, 1), title="s")
@@ -68,7 +66,7 @@ def get_dynamic_solution(
     force_reprocess,
 ):
     scenario_to_solve = "time-marching"
-    bc_array, solutions, nodes, elements = retrieve_solution(
+    bc_array, solutions, mass_mat, stiff_mat, nodes, elements = retrieve_solution(
         geometry_type,
         params,
         model,
@@ -80,6 +78,7 @@ def get_dynamic_solution(
         n_t_iter=n_t_iter,
         initial_state=initial_state,
         custom_str=custom_str,
+        return_matrices=True,
     )
 
     print("Number of elements:", len(elements))
@@ -98,9 +97,18 @@ def get_dynamic_solution(
     #     instant_show=True,
     # )
 
+    # calculate energy
+    d_solutions_u = (solutions[:, 1:] - solutions[:, :-1]) / dt
+    energy = []
+    for i in range(n_t_iter - 1):
+        energy.append(
+            solutions[:, i].T @ stiff_mat @ solutions[:, i]
+            + d_solutions_u[:, i].T @ mass_mat @ d_solutions_u[:, i]
+        )
+
     solution_displacements = get_displacements(bc_array, nodes, solutions, n_t_iter)
 
-    return solution_displacements, nodes
+    return solution_displacements, nodes, energy
 
 
 def get_displacements(bc_array, nodes, solutions, n_iter_t):
@@ -114,18 +122,19 @@ def get_displacements(bc_array, nodes, solutions, n_iter_t):
 
 
 def plot_and_animation(
+    t,
     n_t_iter,
     dt,
     nodes,
     classical_solution_displacements,
     ccst_solution_displacements,
+    y_length,
     n_plots=None,
     fps=10,
 ):
     # -- Fancy plotting
-    t = np.linspace(0, n_t_iter * dt, n_t_iter)
 
-    line_nodes_ids = np.where(np.abs(nodes[:, 2] - 0.5) < 0.01)[0]
+    line_nodes_ids = np.where(np.abs(nodes[:, 2] - y_length / 2) < 0.01)[0]
     line_nodes_ids = line_nodes_ids[np.argsort(nodes[line_nodes_ids, 1])]
 
     # get u_y values
@@ -135,21 +144,27 @@ def plot_and_animation(
     # static plot
     n_times = 4
 
-    fig, axs = plt.subplots(nrows=n_times, ncols=2, figsize=(6, 6))
+    fig, axs = plt.subplots(nrows=n_times, ncols=2, figsize=(6, 6), sharex=True)
 
-    times_to_plot = np.linspace(0, n_t_iter - 1, n_times, dtype=int)
+    # define some times and find the indices of the closer times to use
+    times_to_plot = [0, 1, 1.4, 2.4]
+    times_to_plot = [np.argmin(np.abs(t - time)) for time in times_to_plot]
 
     for i, time in enumerate(times_to_plot):
         axs[i, 0].plot(nodes[line_nodes_ids, 1], ccst_u_y[:, time], "k")
         axs[i, 1].plot(nodes[line_nodes_ids, 1], cl_u_y[:, time], color="gray")
 
-        axs[i, 0].set_title(f"Time: {t[time]:.2f}")
+        axs[i, 0].set_ylabel(f"Time: {t[time]:.2f}", x=0.5, y=0.5)
+
+    axs[0, 0].set_title("CCST", x=0.5, y=1.0)
+    axs[0, 1].set_title("Classical", x=0.5, y=1.0)
 
     plt.tight_layout()
-    plt.savefig(f"{IMAGES_FOLDER}/pulse_propagation.png")
+    plt.savefig(f"{IMAGES_FOLDER}/pulse_propagation_{dt}.pdf")
     plt.show()
 
     # animation of section
+    n_plots = 500
     if n_plots is None:
         n_plots = len(t)
 
@@ -187,11 +202,10 @@ def plot_and_animation(
             time_text,
         )
 
-
     ani = FuncAnimation(fig, update, frames=n_plots, blit=True, interval=50)
 
     ani.save(
-        f"{IMAGES_FOLDER}/pulse_propagation.gif",
+        f"{IMAGES_FOLDER}/pulse_propagation_{dt}.gif",
         fps=fps,
     )
 
@@ -199,15 +213,16 @@ def plot_and_animation(
 def main():
     # -- Different cases run in this script
 
-    t_final = 0.5
-    dt = 0.01
+    t_final = 3.5
+    dt = 0.0001
     n_t_iter = int(t_final / dt)
 
     # -- Overall constants
     geometry_type = "rectangle"
-    x_length = 2.0
-    params = {"side_x": x_length, "side_y": 1.0, "mesh_size": 0.2}
-    force_reprocess = True
+    x_length = 1.5
+    y_length = 0.3
+    params = {"side_x": x_length, "side_y": y_length, "mesh_size": 0.1}
+    force_reprocess = False
     plotting = False
 
     ccst_constraints_loads = "pulse_ccst"
@@ -217,7 +232,7 @@ def main():
             [
                 1,  # E, young's modulus
                 0.29,  # nu, poisson's ratio
-                0.01,  # eta, coupling parameter
+                0.001,  # eta, coupling parameter
                 1,  # rho, density
             ]
         ]
@@ -236,11 +251,13 @@ def main():
     )
 
     # -- Finding initial states
-    common_initial_state = create_pulse_function(x_length, ccst_materials[0, 2], plotting)
+    common_initial_state = create_pulse_function(
+        x_length, ccst_materials[0, 2], plotting
+    )
 
     # -- Getting dynamic solutions
     custom_str = f"pulse_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_ccst"
-    ccst_solution_displacements, nodes = get_dynamic_solution(
+    ccst_solution_displacements, nodes, ccst_energy = get_dynamic_solution(
         geometry_type,
         params,
         cst_model,
@@ -256,7 +273,7 @@ def main():
     custom_str = (
         f"pulse_n_t_iter_{n_t_iter}_dt_{dt}_eta_{ccst_materials[0, 2]}_classical"
     )
-    classical_solution_displacements, nodes = get_dynamic_solution(
+    classical_solution_displacements, nodes, classical_energy = get_dynamic_solution(
         geometry_type,
         params,
         classical_model,
@@ -269,13 +286,37 @@ def main():
         force_reprocess,
     )
 
+    t = np.linspace(0, n_t_iter * dt, n_t_iter)
+
     plot_and_animation(
+        t,
         n_t_iter,
         dt,
         nodes,
         classical_solution_displacements,
         ccst_solution_displacements,
+        y_length,
     )
+
+    t = t[:-1]
+    plt.figure(figsize=(8, 3))
+    plt.plot(
+        t,
+        classical_energy / classical_energy[0],
+        label="Classical",
+        color="gray",
+        linestyle="--",
+    )
+
+    plt.plot(
+        t, ccst_energy / ccst_energy[0], label="CCST", color="black", linestyle="-"
+    )
+
+    plt.xlabel(r"$t$")
+    plt.ylabel(r"$E / E_0$")
+    plt.tight_layout()
+    plt.savefig(f"{IMAGES_FOLDER}/pulse_energy_comparison_{dt}.pdf", dpi=300)
+    plt.show()
 
 
 if __name__ == "__main__":
