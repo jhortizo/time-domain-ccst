@@ -250,6 +250,13 @@ def main():
         ]
     )
 
+    E = 1
+    nu = 0.29
+    eta = 0.001
+    mu = E / (2 * (1 + nu))
+    length_parameter = np.sqrt(eta / mu)
+    print('l:', length_parameter, 'h/l ratio:', y_length / length_parameter)
+
     # -- Finding initial states
     common_initial_state = create_pulse_function(
         x_length, ccst_materials[0, 2], plotting
