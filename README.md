@@ -43,3 +43,26 @@ conda install -c conda-forge poetry
 poetry install
 ```
 
+### Option 3: The rawest without prior requirements
+
+Just try using python 3.12, although I don't see why it shouldn't work with older version (haven't tried):
+
+1. **Create virtual environment**: Using `venv`, the python native tool.
+```bash
+python3 -m venv .venv
+```
+
+2. **Activate the virtual environment**: So your terminal session installs everythhing there.
+```bash
+source .venv/bin/activate
+``` 
+
+3. **Install the dependencies**: This uses the `pyproject.toml` file to install everything, including the local library. That one gets installed in editable mode, so if you change anything it will get updated automatically.
+```bash
+pip install -e .
+```
+
+4. **Run the scripts you want**: You can do it directly on terminal like this, or using your IDE.
+```bash
+python3 scripts/...{whatever you want to run}
+```
