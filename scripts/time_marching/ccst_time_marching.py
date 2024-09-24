@@ -81,6 +81,7 @@ def main():
     initial_state = eigvecs[:, n_eigvec]
     scenario_to_solve = "time-marching"
     n_t_iter = 1000
+
     dt = 0.01
     custom_str = f"mode_{n_eigvec}_n_t_iter_{n_t_iter}_dt_{dt}"
     bc_array, solutions, nodes, _ = retrieve_solution(
