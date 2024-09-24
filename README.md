@@ -1,5 +1,14 @@
 # Time Domain C-CST
 
+<div align="center">
+<a href="https://gitmoji.dev">
+  <img
+    src="https://img.shields.io/badge/gitmoji-%20😜%20😍-FFDD67.svg?style=flat-square"
+    alt="Gitmoji"
+  />
+</a>
+</div>
+
 ## Description
 
 Codes related to the paper presenting a time-marching scheme for Continuum Mechanics Corrected Couple-Stress Theory
