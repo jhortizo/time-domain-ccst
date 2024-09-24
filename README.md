@@ -13,6 +13,18 @@
 
 Codes related to the paper presenting a time-marching scheme for Continuum Mechanics Corrected Couple-Stress Theory
 
+## Folder structure (and how to explore)
+
+This Python project is divided into different folders to keep everything as tidy and reusable as possible.
+
+- The `scripts` folder contains scripts that run the simulations done.
+  - The `implicit_time_scheme_paper` contains the results for the corresponding paper
+  - `other`contains intermediate simulations done as validation, or experiments not presented in other reports
+- The `time_domain_ccst` is a library that contains several useful functions that are used in the scripts. It contains functions for the **Method of Manufactured Solution**, as well as the solver for dynamic, static and eigenproblem cases and other utilities for data handling and plotting.
+- The `notebooks` folder contains some independent notebooks where I tried some things dunring the development of the repo. Those are non-essential, but may be interesting to some.
+
+You should start exploring the reports existing that are supported by this library. And then check the scripts where those results are calculated.
+
 ## Installation
 
 This repository uses [poetry](https://python-poetry.org/) to manage the dependencies, and to install the local library `time_domain_ccst`.
