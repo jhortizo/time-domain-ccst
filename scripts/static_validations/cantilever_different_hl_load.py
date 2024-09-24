@@ -6,23 +6,14 @@ from tqdm import tqdm
 from time_domain_ccst.constants import IMAGES_FOLDER
 from time_domain_ccst.fem_solver import retrieve_solution
 
+plt.style.use("cst_paper.mplstyle")
+
 
 def do_stiffness_variation_plotting(
     h_l_ratios: np.ndarray, adim_stiffs: np.ndarray, L_names: list[str]
 ) -> None:
-    # black in hex
-    black = "#000000"
     plt.rcParams["image.cmap"] = "YlGnBu_r"
     plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams["text.color"] = black
-    plt.rcParams["font.size"] = 12
-    plt.rcParams["xtick.color"] = black
-    plt.rcParams["ytick.color"] = black
-    plt.rcParams["axes.labelcolor"] = black
-    plt.rcParams["axes.edgecolor"] = black
-    plt.rcParams["axes.spines.right"] = False
-    plt.rcParams["axes.spines.top"] = False
-    plt.figure(figsize=(6, 4))
 
     for admin_stiff, L_name in zip(adim_stiffs, L_names):
         plt.plot(h_l_ratios, admin_stiff, "o-", label=f"$L= {L_name}h$")
@@ -33,7 +24,7 @@ def do_stiffness_variation_plotting(
     plt.tight_layout()
     plt.legend()
 
-    plt.savefig(IMAGES_FOLDER + "/compare_rigidity_variation.png", dpi=300)
+    plt.savefig(IMAGES_FOLDER + "/compare_rigidity_variation.pdf", dpi=300)
     plt.show()
 
 
@@ -61,6 +52,7 @@ def main():
 
     Kss = []
 
+    # takes about 15min in my machine
     for i in tqdm(range(len(h_l_ratios)), desc="h/l ratios"):
         Ks = []
         for L in Ls:
@@ -93,7 +85,7 @@ def main():
     I_ = h**3 / 12
     adim_stiffs = []
     for i, L in enumerate(Ls):
-        adim_stiff = Ks[:, i] * L**3 / (3 * E * I_)
+        adim_stiff = Ks[:, i] * L**3 / (3 * E * I_) / 3
         adim_stiffs.append(adim_stiff)
     do_stiffness_variation_plotting(h_l_ratios, adim_stiffs, L_names)
 

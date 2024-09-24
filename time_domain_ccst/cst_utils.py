@@ -293,3 +293,24 @@ def decouple_global_matrices(mass_mat, stiff_mat, rhs, eqs_u, eqs_w, eqs_s):
     f_w = rhs[eqs_w]
 
     return m_uu, k_uu, k_ww, k_us, k_ws, f_u, f_w
+
+
+def inverse_complete_disp(
+    bc_array,
+    nodes,
+    sol_complete,
+    len_elements,
+    model="cst_quad9_rot4",
+    ndof_node=2,
+):
+    nnodes = nodes.shape[0]
+    if model == "cst_quad9_rot4":
+        sol = np.zeros(bc_array.max() + len_elements + 1, dtype=float)
+    elif model == "classical_quad9":
+        sol = np.zeros(bc_array.max() + 1, dtype=float)
+    for row in range(nnodes):
+        for col in range(ndof_node):
+            cons = bc_array[row, col]
+            if cons != -1:
+                sol[cons] = sol_complete[row, col]
+    return sol

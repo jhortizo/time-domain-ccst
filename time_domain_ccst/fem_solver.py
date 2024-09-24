@@ -19,6 +19,7 @@ from .cst_utils import (
     cst_quad9_rot4,
     decouple_global_matrices,
     get_variables_eqs,
+    inverse_complete_disp,
 )
 from .gmesher import create_mesh
 from .utils import (
@@ -78,7 +79,8 @@ def _compute_solution(
     scenario_to_solve: Literal["static", "eigenproblem", "time-marching"],
     dt: float | None,
     n_t_iters: int | None,
-    initial_state: np.ndarray | None,
+    initial_state: np.ndarray | dict | None,
+    return_matrices: bool,
 ):
     assem_op, cst_element = cst_model_functions[cst_model]
 
@@ -113,7 +115,9 @@ def _compute_solution(
     else:
         create_mesh(geometry_type, geometry_mesh_params, files_dict["mesh"])
 
-        cons, elements, nodes, loads = _load_mesh(files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params)
+        cons, elements, nodes, loads = _load_mesh(
+            files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params
+        )
 
     # Assembly
     can_be_sparse = not (scenario_to_solve == "eigenproblem")
@@ -142,10 +146,47 @@ def _compute_solution(
     elif scenario_to_solve == "time-marching":
         rhs = loadasem(loads, bc_array, neq)
         solutions = np.zeros((neq, n_t_iters))
-        solutions[:, 0] = initial_state  # assume constant behavior in first steps
-        solutions[:, 1] = initial_state
+        if type(initial_state) == np.ndarray:
+            solutions[:, 0] = initial_state  # assume constant behavior in first steps
+            solutions[:, 1] = initial_state
+        elif isinstance(initial_state, dict):
+            u_x_0 = initial_state["u_x"](nodes[:, 1], nodes[:, 2])
+            u_y_0 = initial_state["u_y"](nodes[:, 1], nodes[:, 2])
+
+            if cst_model == "cst_quad9_rot4":
+                w_0 = initial_state["w"](nodes[:, 1], nodes[:, 2])
+                s_0 = initial_state["s"](nodes[:, 1], nodes[:, 2])
+
+                u_0 = np.zeros((len(nodes), 3))
+                u_0[:, 0] = u_x_0
+                u_0[:, 1] = u_y_0
+                u_0[:, 2] = w_0
+
+                initial_solution = inverse_complete_disp(
+                    bc_array, nodes, u_0, len(elements), cst_model, ndof_node=3
+                )
+
+                # and the skew-symmetric part of the force-stress tensor
+                eqs_s = assem_op[:, 22]
+                eqs_s = eqs_s[eqs_s >= 0]
+                # get the rows of assem_op where col 22 is not -1
+                id_elements_s = np.where(assem_op[:, 22] >= 0)[0]
+                id_nodes_s = elements[id_elements_s, 11]
+                initial_solution[eqs_s] = s_0[id_nodes_s]
+
+            if cst_model == "classical_quad9":
+                u_0 = np.zeros((len(nodes), 2))
+                u_0[:, 0] = u_x_0
+                u_0[:, 1] = u_y_0
+                initial_solution = inverse_complete_disp(
+                    bc_array, nodes, u_0, len(elements), cst_model, ndof_node=2
+                )
+
+            solutions[:, 0] = initial_solution
+            solutions[:, 1] = initial_solution
+
         if cst_model == "classical_quad9":
-            for i in range(1, n_t_iters - 1):
+            for i in tqdm(range(1, n_t_iters - 1), desc="iterations"):
                 A = mass_mat + dt**2 * stiff_mat
                 b = (
                     dt**2 * rhs
@@ -174,9 +215,18 @@ def _compute_solution(
 
                 solutions[eqs_u, i + 1] = spsolve(M, b)
 
-                # here I could calculate also for theta and s, but it is not necessary
+                solutions[eqs_s, i + 1] = inv_A @ (
+                    k_us.T @ solutions[eqs_u, i + 1] - k_ws.T @ inv_k_ww @ f_w
+                )
+                solutions[eqs_w, i + 1] = inv_k_ww @ (
+                    f_w + k_ws @ solutions[eqs_s, i + 1]
+                )
 
-        save_solution_files(bc_array, solutions, files_dict)
+        save_solution_files(
+            bc_array, solutions, files_dict, mass_mat, stiff_mat, return_matrices
+        )
+        if return_matrices:
+            return bc_array, solutions, mass_mat, stiff_mat, nodes, elements
         return bc_array, solutions, nodes, elements
 
 
@@ -191,8 +241,9 @@ def retrieve_solution(
     custom_str: str = "",
     dt: float | None = None,
     n_t_iter: int | None = None,
-    initial_state: np.ndarray | None = None,
+    initial_state: np.ndarray | dict | None = None,
     cons_loads_fcn_params: dict = {},
+    return_matrices: bool = False,
 ):
     files_dict = generate_solution_filenames(
         geometry_type,
@@ -201,12 +252,17 @@ def retrieve_solution(
         scenario_to_solve,
         geometry_mesh_params,
         custom_str=custom_str,
+        return_matrices=return_matrices,
     )
     cons_loads_fcn = SYSTEMS[constraints_loads]
 
     if check_solution_files_exists(files_dict) and not force_reprocess:
-        _, elements, nodes, _ = _load_mesh(files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params)
-        solution_structures = load_solutions(files_dict, scenario_to_solve)
+        _, elements, nodes, _ = _load_mesh(
+            files_dict["mesh"], cons_loads_fcn, cons_loads_fcn_params
+        )
+        solution_structures = load_solutions(
+            files_dict, scenario_to_solve, return_matrices
+        )
         complete_response = (*solution_structures, nodes, elements)
 
     else:
@@ -222,6 +278,7 @@ def retrieve_solution(
             dt,
             n_t_iter,
             initial_state,
+            return_matrices,
         )
 
     return complete_response

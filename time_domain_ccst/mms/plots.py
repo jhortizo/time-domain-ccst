@@ -5,6 +5,11 @@ import numpy as np
 from solidspy.postprocesor import complete_disp, plot_node_field
 from time_domain_ccst.constants import IMAGES_FOLDER
 
+plt.style.use("cst_paper.mplstyle")
+
+plt.rcParams["image.cmap"] = "YlGnBu_r"
+plt.rcParams["mathtext.fontset"] = "cm"
+
 
 def conditional_loads_plotting(
     bc_array,
@@ -36,17 +41,47 @@ def conditional_fields_plotting(
     solution,
     bc_array,
     curl_fcn,
+    image_names: str | None = None,
 ):
-    def plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn):
+    def plot_fields(
+        u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn, image_names
+    ):
+        if image_names:
+            savefigs = True
+        else:
+            savefigs = False
+
+        u_fem_norm = np.linalg.norm(u_fem, axis=1)
+        u_true_norm = np.linalg.norm(u_true, axis=1)
+        norm_diff = np.abs(u_fem_norm - u_true_norm)
+
         plot_node_field(
-            u_fem[:, 0],
+            u_fem_norm,
             nodes,
             elements,
-            title=[
-                f"u_x FEM_{len(elements)}_elements",
+            savefigs=savefigs,
+            filename=[
+                f"{IMAGES_FOLDER}/{image_names}_u_fem_{len(elements)}_elements.pdf"
             ],
         )
-        plot_node_field(u_true[:, 0], nodes, elements, title=["u_x True"])
+        plot_node_field(
+            u_true_norm,
+            nodes,
+            elements,
+            savefigs=savefigs,
+            filename=[
+                f"{IMAGES_FOLDER}/{image_names}_u_true_{len(elements)}_elements.pdf"
+            ],
+        )
+        plot_node_field(
+            norm_diff,
+            nodes,
+            elements,
+            savefigs=savefigs,
+            filename=[
+                f"{IMAGES_FOLDER}/{image_names}_norm_diff_{len(elements)}_elements.pdf"
+            ],
+        )
 
         vertex_nodes = list(set(elements[:, 3:7].flatten()))
         sol_rotation = complete_disp(
@@ -58,53 +93,73 @@ def conditional_fields_plotting(
 
         x = nodes[vertex_nodes][:, 1]
         y = nodes[vertex_nodes][:, 2]
-        z = sol_rotation.flatten()
+        z_fem = sol_rotation.flatten()
+        z_teo = curl_fcn(x, y) / 2
 
         fig, ax = plt.subplots()
         # Create a contour plot
-        contour = ax.tricontourf(x, y, z, levels=50, cmap="viridis")
+        contour = ax.tricontourf(x, y, z_fem, levels=50, cmap="YlGnBu_r")
         fig.colorbar(contour, ax=ax)
-        plt.title("W")
-        plt.show()
-
-        z_teo = curl_fcn(x, y)
+        plt.savefig(
+            f"{IMAGES_FOLDER}/{image_names}_curl_fem_{len(elements)}_elements.pdf",
+            dpi=300,
+        )
 
         fig, ax = plt.subplots()
         # Create a contour plot
-        contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="viridis")
+        contour = ax.tricontourf(x, y, z_teo, levels=50, cmap="YlGnBu_r")
         fig.colorbar(contour, ax=ax)
-        plt.title("W_teo")
-        plt.show()
+        plt.savefig(
+            f"{IMAGES_FOLDER}/{image_names}_curl_true_{len(elements)}_elements.pdf",
+            dpi=300,
+        )
+
+        fig, ax = plt.subplots()
+        # Create a contour plot
+        contour = ax.tricontourf(
+            x, y, np.abs(z_teo - z_fem), levels=50, cmap="YlGnBu_r"
+        )
+        fig.colorbar(contour, ax=ax)
+        plt.savefig(
+            f"{IMAGES_FOLDER}/{image_names}_curl_diff_{len(elements)}_elements.pdf",
+            dpi=300,
+        )
+
+        # close all figures
+        plt.close("all")
 
     if plot_field == "all":
-        plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn)
+        plot_fields(
+            u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn, image_names
+        )
     elif plot_field == "last" and mesh_size == mesh_sizes[-1]:
-        plot_fields(u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn)
+        plot_fields(
+            u_fem, nodes, elements, u_true, bc_array, solution, curl_fcn, image_names
+        )
 
 
 def convergence_plot(
-    mesh_sizes,
+    n_elements,
     errors,
     error_metric_name: str,
     filename: str = None,
 ):
-    log_mesh = np.log10(mesh_sizes)
+    log_mesh = np.log10(n_elements)
     log_rmse = np.log10(errors)
 
-    slope = np.polyfit(log_mesh, log_rmse, 1)[0]
-
-    # and then plot the results
     plt.figure()
-    plt.loglog(mesh_sizes, errors, 'o-', label=error_metric_name)
-    # plt.loglog(n_elements, max_errors, label="Max Error")
-    plt.xlabel("Mesh length")
+    plt.loglog(n_elements, errors, "o-", label=error_metric_name)
+    plt.xlabel("Number of elements")
     plt.ylabel("Error")
     plt.grid()
-    plt.legend()
-
-    plt.text(0.5, 0.9, f"Slope: {round(slope,2)}", transform=plt.gca().transAxes)
+    plt.tight_layout()
+    
     if filename:
         plt.savefig(f"{IMAGES_FOLDER}/{filename}", dpi=300)
     plt.show()
 
+    n_last_points = input(
+        "Select number of last points to include in the slope calculation: "
+    )
+    slope = np.polyfit(log_mesh[-n_last_points:], log_rmse[-n_last_points:], 1)[0]
     print("Slope:", slope)
