@@ -107,6 +107,58 @@ def cantilever_support(line3, cell_data, npts):
     return cons, loads
 
 
+def cantilever_support_disponly(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+    """
+
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[list(left_border), :-1] = -1
+
+    loads = np.zeros((npts, 4))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    return cons, loads
+
+
+def cantilever_double_support(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+    """
+
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+    right_border = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[list(left_border), :] = -1
+    cons[list(right_border), :] = -1
+
+    loads = np.zeros((npts, 4))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    return cons, loads
+
+
+def cantilever_double_support_disponly(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+    """
+
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+    right_border = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+
+    cons = np.zeros((npts, 3), dtype=int)
+    cons[list(left_border), :-1] = -1
+    cons[list(right_border), :-1] = -1
+
+    loads = np.zeros((npts, 4))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    return cons, loads
+
+
 def cantilever_support_classical(line3, cell_data, npts):
     """
     TODO: properly describe this, maybe add some figures to illustrate...
@@ -118,6 +170,26 @@ def cantilever_support_classical(line3, cell_data, npts):
 
     cons = np.zeros((npts, 2), dtype=int)
     cons[list(left_border), :] = -1
+
+    loads = np.zeros((npts, 3))  # empty loads
+    loads[:, 0] = np.arange(npts)  # specify nodes
+
+    return cons, loads
+
+
+def cantilever_double_support_classical(line3, cell_data, npts):
+    """
+    TODO: properly describe this, maybe add some figures to illustrate...
+
+    Classical refers to only add 2 dofs per node, instead of 3.
+    """
+
+    left_border = set(line3[cell_data["line3"]["gmsh:physical"] == 4].flatten())
+    right_border = set(line3[cell_data["line3"]["gmsh:physical"] == 2].flatten())
+
+    cons = np.zeros((npts, 2), dtype=int)
+    cons[list(left_border), :] = -1
+    cons[list(right_border), :] = -1
 
     loads = np.zeros((npts, 3))  # empty loads
     loads[:, 0] = np.arange(npts)  # specify nodes
@@ -139,7 +211,7 @@ def pulse_classical(line3, cell_data, npts):
     cons = np.zeros((npts, 2), dtype=int)
     cons[list(left_border), :] = -1
     cons[list(right_border), :] = -1
-    cons[list(up_border), 0] = -1  
+    cons[list(up_border), 0] = -1
     cons[list(low_border), 0] = -1
 
     loads = np.zeros((npts, 3))  # empty loads
@@ -215,16 +287,28 @@ def no_constraints_no_loads(line3, cell_data, npts):
     return cons, loads
 
 
+def no_constraints_no_loads_classical(line3, cell_data, npts):
+    cons = np.zeros((npts, 2), dtype=int)
+    loads = np.zeros((npts, 3))
+
+    return cons, loads
+
+
 SYSTEMS = {
     "lower_roller_left_roller_upper_force": lower_roller_left_roller_upper_force,
     "borders_fixed": borders_fixed,
     "quarter_ring_rollers_axial_load": quarter_ring_rollers_axial_load,
     "cantilever_support_load": cantilever_support_load,
     "cantilever_support": cantilever_support,
+    "cantilever_support_disponly": cantilever_support_disponly,
     "cantilever_support_classical": cantilever_support_classical,
+    "cantilever_double_support": cantilever_double_support,
+    "cantilever_double_support_disponly": cantilever_double_support_disponly,
+    "cantilever_double_support_classical": cantilever_double_support_classical,
     "plate_hole_rollers_load": plate_hole_rollers_load,
     "circle_borders_fixed": circle_borders_fixed,
     "floating": no_constraints_no_loads,
+    "floating_classical": no_constraints_no_loads_classical,
     "pulse_classical": pulse_classical,
     "pulse_ccst": pulse_ccst,
 }
