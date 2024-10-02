@@ -1,14 +1,17 @@
 import numpy as np
-
-from utils import check_eigenvals_convergence
+import pandas as pd
+from utils import calculate_save_eigvals, plot_convergence
 
 
 def main():
     geometry_type = "rectangle"
-    force_reprocess = False
-    params = {"side_y": 1.0, "side_x": 3.0}
+    force_reprocess = True
+    params = {"side_y": 1.0, "side_x": 10.0}
     cst_model = "cst_quad9_rot4"
-    constraints_loads = "cantilever_support_load"
+    constraints_loads = "cantilever_support"
+
+    data_folder = 'data/solutions'
+    filename = f"{data_folder}/{constraints_loads}.csv"
 
     materials = np.array(
         [
@@ -21,22 +24,41 @@ def main():
         ]
     )
 
-    eigsolution = True
-
-    mesh_sizes = np.logspace(0, -0.75, 9)
+    mesh_sizes = np.logspace(0, -0.75, 9)[:-2]
     plot_style = "last"
 
-    check_eigenvals_convergence(
-        geometry_type,
-        params,
-        cst_model,
-        constraints_loads,
-        materials,
-        eigsolution,
-        force_reprocess,
-        mesh_sizes,
-        plot_style,
-    )  # with mesh size = 0.42, the eigenvalues already converge (below 5% variation)
+    # if filename exists then load it, else generate it
+    if not force_reprocess:
+        try:
+            df = pd.read_csv(filename)
+            print("Loaded dataframe from", filename)
+        except FileNotFoundError:
+            print("File not found, generating it...")
+            df = calculate_save_eigvals(
+                geometry_type,
+                params,
+                cst_model,
+                constraints_loads,
+                materials,
+                force_reprocess,
+                mesh_sizes,
+                plot_style,
+                df_filename=filename,
+            )
+    else:
+        df = calculate_save_eigvals(
+            geometry_type,
+            params,
+            cst_model,
+            constraints_loads,
+            materials,
+            force_reprocess,
+            mesh_sizes,
+            plot_style,
+            df_filename=filename,
+        )
+
+    plot_convergence(df, eigval=10, custom_str=constraints_loads)
 
 
 if __name__ == "__main__":

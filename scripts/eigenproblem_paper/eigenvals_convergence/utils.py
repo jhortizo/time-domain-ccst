@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -7,17 +6,19 @@ from time_domain_ccst.fem_solver import retrieve_solution
 from time_domain_ccst.plotter import plot_fields_quad9_rot4
 
 
-def check_eigenvals_convergence(
+def calculate_save_eigvals(
     geometry_type,
     params,
     cst_model,
     constraints_loads,
     materials,
-    eigsolution,
     force_reprocess,
     mesh_sizes,
     plot_style="none",
+    df_filename="eigvals_convergence.csv",
 ):
+
+
     eigvalss = []
     n_elements = []
     for mesh_size in tqdm(mesh_sizes, desc="Mesh sizes"):
@@ -49,37 +50,39 @@ def check_eigenvals_convergence(
                 bc_array, nodes, elements, eigvecs[:, n_eigvec], instant_show=False
             )
 
-    first_eigvals = [eigvals[0] for eigvals in eigvalss]
-    first_eigvals_diff = np.diff(first_eigvals)
-    first_eigvals_diff = np.insert(first_eigvals_diff, 0, np.nan)
+    eigvals_dict = {}
 
-    second_eigvals = [eigvals[1] for eigvals in eigvalss]
-    second_eigvals_diff = np.diff(second_eigvals)
-    second_eigvals_diff = np.insert(second_eigvals_diff, 0, np.nan)
-
-    tenth_eigvals = [eigvals[9] for eigvals in eigvalss]
-    tenth_eigvals_diff = np.diff(tenth_eigvals)
-    tenth_eigvals_diff = np.insert(tenth_eigvals_diff, 0, np.nan)
+    for i in range(50):
+        eigvals_i = [eigvals[i] for eigvals in eigvalss]
+        eigvals_dict[f"eigval_{i+1}"] = eigvals_i
 
     df = pd.DataFrame(
         {
-            "Mesh Size": mesh_sizes,
-            "Number of Elements": n_elements,
-            "First Eigenvalue": first_eigvals,
-            "First Eigenvalue Diff": first_eigvals_diff,
-            "Second Eigenvalue": second_eigvals,
-            "Second Eigenvalue Diff": second_eigvals_diff,
-            "Tenth Eigenvalue": tenth_eigvals,
-            "Tenth Eigenvalue Diff": tenth_eigvals_diff,
+            "mesh_size": mesh_sizes,
+            "n_elements": n_elements,
+            **eigvals_dict,
         }
     )
 
-    print(df)
+    df.to_csv(df_filename, index=False)
+
+    return df
+
+
+def plot_convergence(
+    df,
+    eigval=10,
+    custom_str="",
+):
+    plt.style.use("cst_paper.mplstyle")
+    n_elements = df["n_elements"]
+    eigvals = df["eigval_10"]
 
     plt.figure()
-    plt.plot(n_elements, tenth_eigvals, label="Tenth Eigenvalue")
-    plt.xlabel("Mesh Size")
+    plt.plot(n_elements, eigvals, label=f"Eigenvalues {eigval}")
+    plt.xlabel("Number of Elements")
     plt.ylabel("Eigenvalue")
     plt.legend()
-    plt.grid()
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(f"data/images/eigvals_convergence_{custom_str}.pdf", dpi=300)
+
