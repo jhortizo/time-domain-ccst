@@ -1,33 +1,29 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from tqdm import tqdm
-from time_domain_ccst.constants import IMAGES_FOLDER
+
 from time_domain_ccst.fem_solver import retrieve_solution
 
 
 def do_eigenvalue_comparison_plotting(
-    h_l_ratios: np.ndarray, eigvalss: np.ndarray, show: bool = False
+    h_l_ratios: np.ndarray, eigvalss: np.ndarray
 ) -> None:
-    plt.rcParams["font.size"] = 18
-    plt.figure(figsize=(12, 6))
+    plt.style.use("cst_paper.mplstyle")
+
+    plt.figure()
     plt.plot(np.arange(1000), eigvalss[[0, -1], :].T, "-")
     plt.xlabel("Eigenvalue")
     plt.ylabel("Value")
     plt.legend([f"h/l = {h_l_ratios[i]:.0e}" for i in [0, -1]])
-    plt.grid()
-    plt.savefig(IMAGES_FOLDER + "/compare_cantilever_eigenvalues.png", dpi=300)
+    plt.savefig("data/images/compare_cantilever_eigenvalues.pdf", dpi=300)
 
-    plt.show() if show else plt.close()
-
-    plt.figure(figsize=(12, 6))
+    plt.figure()
     plt.plot(h_l_ratios, eigvalss[:, 2:7], "o-")
     plt.xlabel("h/l")
     plt.ylabel("Eigenvalues")
     plt.legend([f"Eigenvalue {i}" for i in range(3, 8)])
     plt.xscale("log")
-    plt.grid()
-    plt.savefig(IMAGES_FOLDER + "/eigenvalue_vs_hlratio.png", dpi=300)
-    plt.show() if show else plt.close()
+    plt.savefig("data/images/eigenvalue_vs_hlratio.pdf", dpi=300)
 
 
 def main():
@@ -50,25 +46,33 @@ def main():
     ls = h / h_l_ratios
     etas = ls**2 * mu
 
-    eigvalss = []
-    for i in tqdm(range(len(h_l_ratios)), desc="h/l ratios"):
-        materials = np.array([[E, nu, etas[i], rho]])
-        custom_str = f"h_l_ratio_{h_l_ratios[i]:.2e}"
+    eigvals_file = "data/solutions/eigvals_different_etas.txt"
 
-        _, eigvals, _, _, _ = retrieve_solution(
-            geometry_type,
-            params,
-            cst_model,
-            constraints_loads,
-            materials,
-            scenario_to_solve="eigenproblem",
-            force_reprocess=force_reprocess,
-            custom_str=custom_str,
-        )
+    if not force_reprocess:
+        try:
+            eigvalss = np.loadtxt(eigvals_file)
+            print("Loaded eigenvalues from", eigvals_file)
+        except FileNotFoundError:
+            eigvalss = []
+            for i in tqdm(range(len(h_l_ratios)), desc="h/l ratios"):
+                materials = np.array([[E, nu, etas[i], rho]])
+                custom_str = f"h_l_ratio_{h_l_ratios[i]:.2e}"
 
-        eigvalss.append(eigvals[:1000])
+                _, eigvals, _, _, _ = retrieve_solution(
+                    geometry_type,
+                    params,
+                    cst_model,
+                    constraints_loads,
+                    materials,
+                    scenario_to_solve="eigenproblem",
+                    force_reprocess=force_reprocess,
+                    custom_str=custom_str,
+                )
 
-    eigvalss = np.array(eigvalss)
+                eigvalss.append(eigvals[:1000])
+
+            eigvalss = np.array(eigvalss)
+            np.savetxt(eigvals_file, eigvalss)
 
     do_eigenvalue_comparison_plotting(h_l_ratios, eigvalss)
 
