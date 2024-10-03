@@ -5,7 +5,7 @@ from utils import calculate_save_eigvals, plot_convergence
 
 def main():
     geometry_type = "rectangle"
-    force_reprocess = True
+    force_reprocess = False
     params = {"side_y": 1.0, "side_x": 10.0}
     cst_model = "cst_quad9_rot4"
     constraints_loads = "cantilever_support"
