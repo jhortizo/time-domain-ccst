@@ -2,7 +2,7 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
-from solidspy.postprocesor import complete_disp, plot_node_field, mesh2tri, tri_plot
+from solidspy.postprocesor import complete_disp, plot_node_field, mesh2tri
 from time_domain_ccst.constants import IMAGES_FOLDER
 
 plt.style.use("cst_paper.mplstyle")
@@ -198,7 +198,7 @@ def plot_node_field_with_labels(
         else:
             current_field = field[:, cont]
         plt.figure(figtitle[cont])
-        tri_plot(
+        tri_plot_nocb(
             tri,
             current_field,
             title=title[cont],
@@ -209,5 +209,43 @@ def plot_node_field_with_labels(
         )
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+        # add label to colorbar
+        plt.colorbar().set_label(r'$||u||$')
+        plt.tight_layout()
         if savefigs:
             plt.savefig(filename[cont])
+
+
+def tri_plot_nocb(tri, field, title="", levels=12, savefigs=False,
+             plt_type="contourf", filename="solution_plot.pdf"):
+    """Plot contours over triangulation
+
+    Parameters
+    ----------
+    tri : ndarray (float)
+        Array with number and nodes coordinates:
+        `number coordX coordY BCX BCY`
+    field : ndarray (float)
+        Array with data to be plotted for each node.
+    title : string (optional)
+        Title of the plot.
+    levels : int (optional)
+        Number of levels to be used in ``contourf``.
+    savefigs : bool (optional)
+        Allow to save the figure.
+    plt_type : string (optional)
+        Plot the field as one of the options: ``pcolor`` or
+        ``contourf``
+    filename : string (optional)
+        Filename to save the figures.
+    """
+    if plt_type == "pcolor":
+        disp_plot = plt.tripcolor
+    elif plt_type == "contourf":
+        disp_plot = plt.tricontourf
+    disp_plot(tri, field, levels, shading="gouraud")
+    plt.title(title)
+    # plt.colorbar(orientation='vertical')
+    plt.axis("image")
+    if savefigs:
+        plt.savefig(filename)
