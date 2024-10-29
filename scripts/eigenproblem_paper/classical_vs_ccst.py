@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
 from solidspy.postprocesor import complete_disp
 
 from time_domain_ccst.fem_solver import retrieve_solution
@@ -14,14 +12,14 @@ def find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u):
     list_closer = []
     for i, ccst_eigvec in enumerate(ccst_eigvecs_u):
         closest_index = np.argmin(
-            np.linalg.norm(classical_eigvecs_u - ccst_eigvec, axis=(1, 2))
+            np.linalg.norm(classical_eigvecs_u - ccst_eigvec, axis=(1, 2)) # cosine distance instead
         )
         list_closer.append((i, closest_index))
 
     return list_closer
 
 
-def find_initial_states(
+def find_eigenvals_pairs(
     geometry_type,
     params,
     ccst_model,
@@ -73,14 +71,13 @@ def find_initial_states(
     print("Number of elements:", len(elements))
 
     list_closer = find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u)
-    classical_n_eigvec = list_closer[ccst_n_eigvec][1]
 
     if plotting:
         plot_fields_quad9_rot4(
             ccst_bc_array,
             nodes,
             elements,
-            ccst_eigvecs[:, 10],
+            ccst_eigvecs[:, 2],
             instant_show=True,
         )
 
@@ -88,14 +85,9 @@ def find_initial_states(
             classical_bc_array,
             nodes,
             elements,
-            classical_eigvecs[:, 11],
+            classical_eigvecs[:, 0],
             instant_show=True,
         )
-
-    ccst_initial_state = ccst_eigvecs[:, ccst_n_eigvec]
-    classical_initial_state = classical_eigvecs[:, classical_n_eigvec]
-
-    return ccst_initial_state, classical_initial_state
 
 
 def main():
@@ -140,8 +132,9 @@ def main():
             ]
         ]
     )
+    
 
-    a, b = find_initial_states(
+    find_eigenvals_pairs(
         geometry_type,
         params,
         ccst_model,
