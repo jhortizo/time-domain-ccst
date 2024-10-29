@@ -24,6 +24,22 @@ def do_stiffness_variation_plotting(
     plt.tight_layout()
     plt.legend()
 
+    # Adding annotations
+    plt.annotate('Mockup Text Left', xy=(h_l_ratios[0], adim_stiffs[0][0]), 
+                 xytext=(h_l_ratios[0], adim_stiffs[0][0] * 2),
+                 arrowprops=dict(facecolor='black', shrink=0.05),
+                 horizontalalignment='center', verticalalignment='center')
+    
+    plt.annotate('Mockup Text Center', xy=(h_l_ratios[len(h_l_ratios)//2], adim_stiffs[0][len(h_l_ratios)//2]), 
+                 xytext=(h_l_ratios[len(h_l_ratios)//2], adim_stiffs[0][len(h_l_ratios)//2] * 2),
+                 arrowprops=dict(facecolor='black', shrink=0.05),
+                 horizontalalignment='center', verticalalignment='center')
+    
+    plt.annotate('Mockup Text Right', xy=(h_l_ratios[-1], adim_stiffs[0][-1]), 
+                 xytext=(h_l_ratios[-1], adim_stiffs[0][-1] * 2),
+                 arrowprops=dict(facecolor='black', shrink=0.05),
+                 horizontalalignment='center', verticalalignment='center')
+
     plt.savefig(IMAGES_FOLDER + "/compare_rigidity_variation.pdf", dpi=300)
     plt.show()
 
