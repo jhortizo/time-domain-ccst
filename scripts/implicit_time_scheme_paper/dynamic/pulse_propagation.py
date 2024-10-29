@@ -218,14 +218,14 @@ def main():
     # -- Different cases run in this script
 
     t_final = 3.5
-    dt = 0.0001
+    dt = 0.001
     n_t_iter = int(t_final / dt)
 
     # -- Overall constants
     geometry_type = "rectangle"
-    x_length = 1.5
+    x_length = 2
     y_length = 0.3
-    params = {"side_x": x_length, "side_y": y_length, "mesh_size": 0.1}
+    params = {"side_x": x_length, "side_y": y_length, "mesh_size": 0.05}
     force_reprocess = False
     plotting = False
 
