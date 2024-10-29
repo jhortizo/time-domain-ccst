@@ -242,11 +242,12 @@ def plot_oscillatory_movement_sample_points_complete_animation(
     ax1.set_ylabel(r"$y$")
     ax1.set_aspect("equal")
     ax1.axis("off")
+    point_specifiers = ["left", "center", "right"]
 
-    for i in range(n_points):
+    for i, point_specifier in enumerate(point_specifiers):
         yvals = sample_solution_displacements[i, 1, :]
 
-        axs[i].set_ylabel(r"$u_y$")
+        axs[i].set_ylabel(r"$u_y$ (" + point_specifier + ")")
 
         axs[i].plot(
             t,
@@ -431,16 +432,17 @@ def plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
     ax1.set_ylabel(r"$y$")
     ax1.set_aspect("equal")
     ax1.axis("off")
+    point_specifiers = ["left", "center", "right"]
 
-    for i in range(n_points):
+    for i, point_specifier in enumerate(point_specifiers):
         if static_field_to_plot == "y":
             yvals_ccst = sample_solution_displacements_ccst[i, 1, :]
             yvals_classical = sample_solution_displacements_classical[i, 1, :]
-            axs[i].set_ylabel(r"$u_y$")
+            axs[i].set_ylabel(r"$u_y$ (" + point_specifier + ")")
         elif static_field_to_plot == "x":
             yvals_ccst = sample_solution_displacements_ccst[i, 0, :]
             yvals_classical = sample_solution_displacements_classical[i, 0, :]
-            axs[i].set_ylabel(r"$u_x$")
+            axs[i].set_ylabel(r"$u_x$ (" + point_specifier + ")")
         elif static_field_to_plot == "norm":
             yvals_ccst = np.linalg.norm(
                 sample_solution_displacements_ccst[i, :, :], axis=0
@@ -448,7 +450,7 @@ def plot_oscillatory_movement_sample_points_complete_animation_vs_classical(
             yvals_classical = np.linalg.norm(
                 sample_solution_displacements_classical[i, :, :], axis=0
             )
-            axs[i].set_ylabel(r"$||u||$")
+            axs[i].set_ylabel(r"$||u||$ (" + point_specifier + ")")
 
         axs[i].plot(
             t,
