@@ -10,3 +10,4 @@ reference/
 
 # vscode related files
 .vscode/
+.venv/
