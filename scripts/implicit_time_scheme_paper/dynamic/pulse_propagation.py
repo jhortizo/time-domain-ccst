@@ -159,8 +159,8 @@ def plot_and_animation(
     axs[0, 0].set_title("CCST", x=0.5, y=1.0)
     axs[0, 1].set_title("Classical", x=0.5, y=1.0)
 
-    axs[-1, 0].set_xlabel(r"$u_y$")
-    axs[-1, 1].set_xlabel(r"$u_y$")
+    axs[-1, 0].set_xlabel(r"$x$")
+    axs[-1, 1].set_xlabel(r"$x$")
 
 
     plt.tight_layout()
@@ -223,9 +223,9 @@ def main():
 
     # -- Overall constants
     geometry_type = "rectangle"
-    x_length = 2
+    x_length = 1.5
     y_length = 0.3
-    params = {"side_x": x_length, "side_y": y_length, "mesh_size": 0.05}
+    params = {"side_x": x_length, "side_y": y_length, "mesh_size": 0.1}
     force_reprocess = False
     plotting = False
 
