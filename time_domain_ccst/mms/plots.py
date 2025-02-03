@@ -2,7 +2,7 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
-from solidspy.postprocesor import complete_disp, plot_node_field
+from solidspy.postprocesor import complete_disp, plot_node_field, mesh2tri
 from time_domain_ccst.constants import IMAGES_FOLDER
 
 plt.style.use("cst_paper.mplstyle")
@@ -55,7 +55,7 @@ def conditional_fields_plotting(
         u_true_norm = np.linalg.norm(u_true, axis=1)
         norm_diff = np.abs(u_fem_norm - u_true_norm)
 
-        plot_node_field(
+        plot_node_field_with_labels(
             u_fem_norm,
             nodes,
             elements,
@@ -64,7 +64,7 @@ def conditional_fields_plotting(
                 f"{IMAGES_FOLDER}/{image_names}_u_fem_{len(elements)}_elements.pdf"
             ],
         )
-        plot_node_field(
+        plot_node_field_with_labels(
             u_true_norm,
             nodes,
             elements,
@@ -73,7 +73,7 @@ def conditional_fields_plotting(
                 f"{IMAGES_FOLDER}/{image_names}_u_true_{len(elements)}_elements.pdf"
             ],
         )
-        plot_node_field(
+        plot_node_field_with_labels(
             norm_diff,
             nodes,
             elements,
@@ -153,7 +153,7 @@ def convergence_plot(
     plt.ylabel("Error")
     plt.grid()
     plt.tight_layout()
-    
+
     if filename:
         plt.savefig(f"{IMAGES_FOLDER}/{filename}", dpi=300)
     plt.show()
@@ -163,3 +163,89 @@ def convergence_plot(
     )
     slope = np.polyfit(log_mesh[-n_last_points:], log_rmse[-n_last_points:], 1)[0]
     print("Slope:", slope)
+
+
+def plot_node_field_with_labels(
+    field,
+    nodes,
+    elements,
+    plt_type="contourf",
+    xlabel=r"$x$",
+    ylabel=r"$y$",
+    levels=12,
+    savefigs=False,
+    title=None,
+    figtitle=None,
+    filename=None,
+):
+    """Copy from solidspy postprocessor.py, just enables to add labels to axis"""
+    tri = mesh2tri(nodes, elements)
+    if len(field.shape) == 1:
+        nfields = 1
+    else:
+        _, nfields = field.shape
+    if title is None:
+        title = ["" for cont in range(nfields)]
+    if figtitle is None:
+        figs = plt.get_fignums()
+        nfigs = len(figs)
+        figtitle = [cont + 1 for cont in range(nfigs, nfigs + nfields)]
+    if filename is None:
+        filename = ["output{}.pdf".format(cont) for cont in range(nfields)]
+    for cont in range(nfields):
+        if nfields == 1:
+            current_field = field
+        else:
+            current_field = field[:, cont]
+        plt.figure(figtitle[cont])
+        tri_plot_nocb(
+            tri,
+            current_field,
+            title=title[cont],
+            levels=levels,
+            plt_type=plt_type,
+            savefigs=savefigs,
+            filename=filename[cont],
+        )
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        # add label to colorbar
+        plt.colorbar().set_label(r'$||u||$')
+        plt.tight_layout()
+        if savefigs:
+            plt.savefig(filename[cont])
+
+
+def tri_plot_nocb(tri, field, title="", levels=12, savefigs=False,
+             plt_type="contourf", filename="solution_plot.pdf"):
+    """Plot contours over triangulation
+
+    Parameters
+    ----------
+    tri : ndarray (float)
+        Array with number and nodes coordinates:
+        `number coordX coordY BCX BCY`
+    field : ndarray (float)
+        Array with data to be plotted for each node.
+    title : string (optional)
+        Title of the plot.
+    levels : int (optional)
+        Number of levels to be used in ``contourf``.
+    savefigs : bool (optional)
+        Allow to save the figure.
+    plt_type : string (optional)
+        Plot the field as one of the options: ``pcolor`` or
+        ``contourf``
+    filename : string (optional)
+        Filename to save the figures.
+    """
+    if plt_type == "pcolor":
+        disp_plot = plt.tripcolor
+    elif plt_type == "contourf":
+        disp_plot = plt.tricontourf
+    disp_plot(tri, field, levels, shading="gouraud")
+    plt.title(title)
+    # plt.colorbar(orientation='vertical')
+    plt.axis("image")
+    if savefigs:
+        plt.savefig(filename)

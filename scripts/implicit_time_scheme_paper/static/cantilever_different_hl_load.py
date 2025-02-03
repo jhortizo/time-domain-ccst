@@ -24,6 +24,16 @@ def do_stiffness_variation_plotting(
     plt.tight_layout()
     plt.legend()
 
+    # Adding annotations
+    plt.annotate('Couple-stress \nsaturated', xy=(h_l_ratios[0], adim_stiffs[0][0] * 0.2),
+                 horizontalalignment='left', verticalalignment='center', fontsize=8)
+    
+    plt.annotate('Couple-stress \nElasticity', xy=(h_l_ratios[len(h_l_ratios)//2] * 10, adim_stiffs[0][len(h_l_ratios)//2] * 10),
+                 horizontalalignment='center', verticalalignment='center', fontsize=8)
+    
+    plt.annotate('Classical Elasticity', xy=(h_l_ratios[-1] * 0.05, adim_stiffs[0][-1] * 3),
+                 horizontalalignment='center', verticalalignment='center', fontsize=8)
+
     plt.savefig(IMAGES_FOLDER + "/compare_rigidity_variation.pdf", dpi=300)
     plt.show()
 

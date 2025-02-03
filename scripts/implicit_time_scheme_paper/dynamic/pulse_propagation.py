@@ -159,6 +159,10 @@ def plot_and_animation(
     axs[0, 0].set_title("CCST", x=0.5, y=1.0)
     axs[0, 1].set_title("Classical", x=0.5, y=1.0)
 
+    axs[-1, 0].set_xlabel(r"$x$")
+    axs[-1, 1].set_xlabel(r"$x$")
+
+
     plt.tight_layout()
     plt.savefig(f"{IMAGES_FOLDER}/pulse_propagation_{dt}.pdf")
     plt.show()
@@ -214,7 +218,7 @@ def main():
     # -- Different cases run in this script
 
     t_final = 3.5
-    dt = 0.0001
+    dt = 0.001
     n_t_iter = int(t_final / dt)
 
     # -- Overall constants

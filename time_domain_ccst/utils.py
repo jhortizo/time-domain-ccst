@@ -129,7 +129,7 @@ def load_eigensolution_files(files_dict, return_matrices):
 
 
 def save_solution_files(
-    bc_array, solution, files_dict, mass_mat, stiff_mat, return_matrices
+    bc_array, solution, files_dict, mass_mat=None, stiff_mat=None, return_matrices=False
 ):
     "Saves solution files"
     save_solution(bc_array, files_dict["bc_array"])

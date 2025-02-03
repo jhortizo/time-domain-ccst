@@ -152,7 +152,7 @@ def find_corresponding_eigmodes(classical_eigvecs_u, ccst_eigvecs_u):
 
 
 def main():
-    # -- Different cases run in this script
+    # -- Different cases run in this script (elapses like 20s each)
 
     ccst_n_eigvec = 0
     static_field_to_plot = "y"
@@ -169,7 +169,7 @@ def main():
     # -- Overall constants
     geometry_type = "rectangle"
     params = {"side_x": 10.0, "side_y": 1.0, "mesh_size": 1.0}
-    force_reprocess = False
+    force_reprocess = True
     plotting = False
 
     ccst_constraints_loads = "cantilever_support"
